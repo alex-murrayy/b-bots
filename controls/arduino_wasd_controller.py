@@ -83,6 +83,8 @@ class ArduinoWASDController:
     
     def right(self):
         """Steer right tap (D command)"""
+        # Send 'D' command (uppercase as per Arduino sketch)
+        # The Arduino sketch expects 'D' for right turn
         return self._send_command('D')
     
     def stop(self):

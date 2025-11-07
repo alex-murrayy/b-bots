@@ -12,6 +12,7 @@ import termios
 import argparse
 import os
 import socket
+import time
 from typing import Optional
 
 # Try to import the Arduino controller for direct connection
@@ -186,11 +187,22 @@ class InteractiveRCCarControl:
         
         try:
             self.print_help()
-            print("\nPress keys to control (Q to quit, H for help):")
+            print("\nPress and HOLD keys for continuous control (Q to quit, H for help):")
+            print("Release key or press Space/C to stop\n")
+            
+            # Track active command for continuous control
+            active_command = None
+            last_command_time = 0
+            command_repeat_interval = 0.15  # Repeat every 150ms
             
             while self.running:
-                # Check if input is available
-                if select.select([sys.stdin], [], [], 0.1)[0]:
+                current_time = time.time()
+                input_available = False
+                char = None
+                
+                # Check if input is available (non-blocking)
+                if select.select([sys.stdin], [], [], 0.05)[0]:
+                    input_available = True
                     char = sys.stdin.read(1)
                     
                     # Handle special characters
@@ -207,8 +219,11 @@ class InteractiveRCCarControl:
                             elif ord(char) == 68:  # Left arrow
                                 char = 'a'
                             else:
-                                continue
-                    
+                                char = None
+                                input_available = False
+                
+                # Process input
+                if input_available and char:
                     char_lower = char.lower()
                     
                     # Process command
@@ -218,29 +233,47 @@ class InteractiveRCCarControl:
                     elif char_lower == 'h':
                         print("\n")
                         self.print_help()
-                        print("\nPress keys to control (Q to quit, H for help):")
+                        print("\nPress and HOLD keys for continuous control (Q to quit, H for help):")
+                        active_command = None
                         continue
-                    elif char_lower == 'w':
-                        self.send_command('w')
-                        print("→ Forward", end='\r', flush=True)
-                    elif char_lower == 's':
-                        self.send_command('s')
-                        print("→ Backward", end='\r', flush=True)
-                    elif char_lower == 'a':
-                        self.send_command('a')
-                        print("→ Left   ", end='\r', flush=True)
-                    elif char_lower == 'd':
-                        self.send_command('d')
-                        print("→ Right  ", end='\r', flush=True)
+                    elif char_lower in ['w', 's', 'a', 'd']:
+                        # Set active command for continuous control
+                        active_command = char_lower
+                        last_command_time = current_time
+                        self.send_command(char_lower)
+                        if char_lower == 'w':
+                            print("→ Forward (HOLD)", end='\r', flush=True)
+                        elif char_lower == 's':
+                            print("→ Backward (HOLD)", end='\r', flush=True)
+                        elif char_lower == 'a':
+                            print("→ Left (HOLD)", end='\r', flush=True)
+                        elif char_lower == 'd':
+                            print("→ Right (HOLD)", end='\r', flush=True)
                     elif char == ' ':
+                        # Stop drive
+                        if active_command in ['w', 's']:
+                            active_command = None
                         self.send_command(' ')
-                        print("→ Stop   ", end='\r', flush=True)
+                        print("→ Stop Drive", end='\r', flush=True)
                     elif char_lower == 'c':
+                        # Center steering
+                        if active_command in ['a', 'd']:
+                            active_command = None
                         self.send_command('c')
-                        print("→ Center ", end='\r', flush=True)
+                        print("→ Center Steering", end='\r', flush=True)
                     elif char_lower == 'x':
+                        # All off
+                        active_command = None
                         self.send_command('x')
                         print("→ All Off", end='\r', flush=True)
+                    else:
+                        # Unknown key - clear active command
+                        active_command = None
+                
+                # Continuously send active command
+                if active_command and (current_time - last_command_time >= command_repeat_interval):
+                    self.send_command(active_command)
+                    last_command_time = current_time
         
         except KeyboardInterrupt:
             print("\n\nInterrupted. Stopping...")
