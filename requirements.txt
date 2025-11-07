@@ -1,8 +1,8 @@
 # Requirements for UB Food Delivery RC Car System
 # Python 3.7+
 
-# No external dependencies required for core functionality
-# The system uses only Python standard library
+# Core dependencies
+pyserial>=3.5  # For Arduino serial communication
 
 # Optional dependencies for enhanced features:
 # matplotlib>=3.5.0  # For visualization
