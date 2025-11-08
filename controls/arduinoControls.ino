@@ -1,9 +1,11 @@
 // ===== YOUR PIN MAP =====
-
-const int PIN_FWD   = 5;  // Orange (Fwd)
-const int PIN_REV   = 7;  // Grey BM (Rev)
-const int PIN_LEFT  = 8;  // Purple FM (Left)
-const int PIN_RIGHT = 6;  // Grey FM (Right)
+// FIXED: Pin mappings corrected based on actual wiring
+// Original behavior: w->left, a->forward, d->reverse
+// Fixed mapping: w->forward, a->left, s->reverse, d->right
+const int PIN_FWD   = 8;  // Forward motor (pin 8 activates forward motor)
+const int PIN_REV   = 6;  // Reverse motor (pin 6 activates reverse motor)  
+const int PIN_LEFT  = 5;  // Left steering (pin 5 activates left motor)
+const int PIN_RIGHT = 7;  // Right steering (pin 7 activates right motor)
 
 // ===== BEHAVIOR SWITCHES =====
 
