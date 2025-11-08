@@ -84,9 +84,15 @@ void setup() {
 
 
   Serial.begin(9600);
-  delay(100);
+  // Note: while(!Serial) can block forever if no serial monitor is open
+  // This causes issues when Python connects - the Arduino waits forever
+  // For Raspberry Pi/Python control, we skip this wait
+  // Uncomment only if you need to wait for Serial Monitor during development
+  // while (!Serial) { ; }
+  delay(500);  // Give serial time to stabilize
   Serial.println(F("WASD + Test Mode Ready"));
   printHelp();
+  Serial.flush();  // Ensure messages are sent
 }
 
 

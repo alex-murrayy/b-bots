@@ -17,7 +17,24 @@ cd ~/b-bots
 # Or wherever your project is located
 ```
 
-### 3. Run Debug Test (Recommended First Step)
+### 3. **FIRST: Verify Arduino Sketch is Running**
+
+```bash
+# CRITICAL: Check if Arduino sketch is actually running
+python3 controls/verify_sketch.py
+
+# This will tell you if:
+# - Sketch is uploaded and running
+# - Arduino is sending startup messages
+# - Commands are being processed
+```
+
+**If this shows no startup messages → Arduino sketch is NOT running!**
+- Open Arduino IDE
+- Re-upload the sketch
+- Check Serial Monitor
+
+### 4. Run Debug Test
 
 ```bash
 # Basic test with debugging
@@ -25,6 +42,9 @@ python3 controls/test_arduino.py --debug
 
 # Comprehensive test suite
 python3 controls/test_arduino_debug.py --debug
+
+# Check Arduino communication
+python3 controls/check_arduino.py
 ```
 
 ## Step-by-Step Debugging Workflow
@@ -48,6 +68,7 @@ python3 controls/test_arduino.py --port /dev/ttyACM0 --debug
 ```
 
 **What to look for:**
+
 - ✅ "Connected to Arduino" message
 - ✅ Arduino startup message (if any)
 - ✅ Commands being sent
@@ -56,11 +77,13 @@ python3 controls/test_arduino.py --port /dev/ttyACM0 --debug
 ### Step 3: Monitor Serial Communication
 
 **Terminal 1 (SSH): Monitor serial**
+
 ```bash
 python3 controls/debug_serial.py --port /dev/ttyACM0
 ```
 
 **Terminal 2 (SSH): Send commands**
+
 ```bash
 python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 w
 python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 s
@@ -81,6 +104,7 @@ python3 controls/interactive_control.py --arduino-port /dev/ttyACM0
 ### Issue 1: "Permission denied" Error
 
 **Solution:**
+
 ```bash
 # Add user to dialout group
 sudo usermod -a -G dialout $USER
@@ -96,6 +120,7 @@ groups
 ### Issue 2: Port Not Found
 
 **Check:**
+
 ```bash
 # List ports
 python3 controls/arduino_wasd_controller.py --list-ports
@@ -108,6 +133,7 @@ dmesg | tail -20
 ```
 
 **Solutions:**
+
 - Try different port: `/dev/ttyUSB0`, `/dev/ttyACM1`
 - Reconnect Arduino USB cable
 - Check USB cable is data-capable (not charge-only)
@@ -115,16 +141,19 @@ dmesg | tail -20
 ### Issue 3: No Response from Arduino
 
 **This is OK if:**
+
 - ✅ Arduino LED flashes when commands are sent
 - ✅ Motors respond to commands
 - ✅ Arduino sketch is uploaded correctly
 
 **Arduino may not send responses if:**
+
 - Serial.println() is commented out
 - Responses are sent but timing is off
 - Buffer issues
 
 **Debug:**
+
 ```bash
 # Use serial monitor to see what Arduino sends
 python3 controls/debug_serial.py --port /dev/ttyACM0
@@ -136,11 +165,13 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 ### Issue 4: Commands Not Executing
 
 **Check Arduino Sketch:**
+
 1. Verify sketch is uploaded: Check Arduino IDE
 2. Check Serial Monitor in Arduino IDE to see if commands are received
 3. Verify baud rate matches (9600)
 
 **Test Arduino directly:**
+
 ```bash
 # Send command and check Arduino response
 python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
@@ -151,12 +182,14 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 ### Issue 5: Interactive Control Not Working
 
 **Try simple mode:**
+
 ```bash
 # Use simple interactive (type commands)
 python3 controls/simple_interactive.py --arduino-port /dev/ttyACM0
 ```
 
 **Check terminal:**
+
 - Make sure you're in a real terminal (not non-interactive SSH)
 - Try: `echo $TERM` (should show something like `xterm-256color`)
 
@@ -314,10 +347,12 @@ python3 controls/test_arduino_debug.py --debug
 ### ✅ Working Correctly:
 
 1. **Connection:**
+
    - "Connected to Arduino" message
    - No errors
 
 2. **Commands:**
+
    - Arduino LED flashes when command sent
    - Motors respond (if connected)
    - No Python errors
@@ -329,9 +364,11 @@ python3 controls/test_arduino_debug.py --debug
 ### ⚠️ Issues to Investigate:
 
 1. **No connection:**
+
    - Check port, permissions, USB cable
 
 2. **Commands not executing:**
+
    - Check Arduino sketch is uploaded
    - Check baud rate matches
    - Check Serial Monitor in Arduino IDE
@@ -369,6 +406,7 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 ## Next Steps
 
 1. **If everything works:**
+
    - Run interactive control: `python3 controls/interactive_control.py`
    - Test all commands
    - Integrate with delivery system
@@ -382,9 +420,9 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 ## Getting Help
 
 If you're stuck:
+
 1. Run `test_arduino_debug.py --debug` and share output
 2. Check Arduino Serial Monitor output
 3. Verify Arduino sketch is uploaded correctly
 4. Check permissions: `groups` (should include 'dialout')
 5. Check port: `ls -l /dev/ttyACM*`
-

@@ -50,18 +50,60 @@ class ArduinoWASDController:
                 print(f"[DEBUG] Port settings: {self.serial}")
             
             # Wait for Arduino to initialize (Arduino resets on serial connection)
-            time.sleep(2)
+            # Some boards need time to initialize serial
+            time.sleep(2.5)  # Increased wait time
             
-            # Clear any startup messages from Arduino
-            time.sleep(0.5)
-            if self.serial.in_waiting > 0:
-                startup_data = self.serial.read(self.serial.in_waiting)
-                if debug:
+            # Read startup messages from Arduino
+            # Arduino sends: "WASD + Test Mode Ready" and help text
+            startup_messages = []
+            start_time = time.time()
+            max_wait = 3.0  # Wait up to 3 seconds for startup messages
+            
+            if debug:
+                print(f"[DEBUG] Reading startup messages (waiting up to {max_wait}s)...")
+            
+            while time.time() - start_time < max_wait:
+                if self.serial.in_waiting > 0:
                     try:
-                        startup_msg = startup_data.decode('utf-8', errors='ignore')
-                        print(f"[DEBUG] Arduino startup message: {startup_msg}")
+                        # Read line by line
+                        line = self.serial.readline()
+                        if line:
+                            text = line.decode('utf-8', errors='ignore').strip()
+                            if text:
+                                startup_messages.append(text)
+                                if debug:
+                                    print(f"[DEBUG] Startup: {text}")
+                                # Stop if we got the main message
+                                if 'WASD' in text or 'Ready' in text:
+                                    # Still wait a bit more for help text
+                                    time.sleep(0.5)
+                                    break
+                    except Exception as e:
+                        if debug:
+                            print(f"[DEBUG] Error reading startup: {e}")
+                        break
+                else:
+                    time.sleep(0.1)
+            
+            # Read any remaining startup data
+            if self.serial.in_waiting > 0:
+                remaining = self.serial.read(self.serial.in_waiting)
+                if debug and remaining:
+                    try:
+                        remaining_text = remaining.decode('utf-8', errors='ignore')
+                        if remaining_text.strip():
+                            if debug:
+                                print(f"[DEBUG] Remaining startup: {remaining_text}")
+                            startup_messages.append(remaining_text.strip())
                     except:
-                        print(f"[DEBUG] Arduino startup data (raw): {startup_data}")
+                        pass
+            
+            if debug:
+                if startup_messages:
+                    print(f"[DEBUG] Received {len(startup_messages)} startup message(s)")
+                else:
+                    print(f"[DEBUG] WARNING: No startup messages received!")
+                    print(f"[DEBUG] This might indicate the sketch is not running")
             
             self.is_connected = True
             print(f"Connected to Arduino on {self.port}")
@@ -132,62 +174,73 @@ class ArduinoWASDController:
                 print(f"[DEBUG] Error writing command: {e}")
             raise RuntimeError(f"Failed to send command: {e}")
         
-        # Wait for Arduino to process (Arduino has delays in some commands)
+        # Wait for Arduino to process
         # Forward/Reverse have 100ms delay, steering has 200ms delay
-        time.sleep(0.2)  # Wait for processing
+        # Arduino also has Serial.println() which adds some delay
+        time.sleep(0.3)  # Increased wait time for processing and response
         
-        # Read Arduino response with extended timeout
+        # Read Arduino response
+        # Arduino sends responses like: "FWD", "REV", "LEFT TAP", "RIGHT TAP", etc.
         response = None
         response_lines = []
-        max_wait_time = 1.0  # Wait up to 1 second for response
+        max_wait_time = 1.5  # Wait up to 1.5 seconds for response
         start_time = time.time()
         bytes_read = 0
         
         if debug:
             print(f"[DEBUG] Waiting for response (timeout: {max_wait_time}s)...")
+            print(f"[DEBUG] Bytes waiting: {self.serial.in_waiting}")
         
+        # Try reading line by line (Arduino uses Serial.println)
         while time.time() - start_time < max_wait_time:
-            bytes_available = self.serial.in_waiting
-            if bytes_available > 0:
+            if self.serial.in_waiting > 0:
                 try:
-                    # Read available data
-                    raw_data = self.serial.read(bytes_available)
-                    bytes_read += len(raw_data)
-                    
-                    if debug:
-                        print(f"[DEBUG] Read {bytes_available} bytes: {repr(raw_data)}")
-                    
-                    # Decode and split by lines
-                    try:
-                        text = raw_data.decode('utf-8', errors='ignore')
-                        if debug:
-                            print(f"[DEBUG] Decoded text: {repr(text)}")
-                        
-                        # Split by newlines and process
-                        lines = text.split('\n')
-                        for line in lines:
-                            line = line.strip()
-                            if line and line not in ['', '\r']:
-                                response_lines.append(line)
+                    # Read a line (Arduino sends lines with Serial.println)
+                    line = self.serial.readline()
+                    if line:
+                        bytes_read += len(line)
+                        try:
+                            text = line.decode('utf-8', errors='ignore').strip()
+                            if debug:
+                                print(f"[DEBUG] Read line ({len(line)} bytes): {repr(text)}")
+                            
+                            if text and text not in ['', '\r', '\n']:
+                                response_lines.append(text)
                                 if debug:
-                                    print(f"[DEBUG] Added response line: {repr(line)}")
-                    except UnicodeDecodeError as e:
-                        if debug:
-                            print(f"[DEBUG] Unicode decode error: {e}, raw: {raw_data}")
-                    
-                    # If we got a complete response, break
-                    if response_lines:
-                        # Check if more data might be coming
-                        time.sleep(0.05)
-                        if self.serial.in_waiting == 0:
-                            break
+                                    print(f"[DEBUG] Added response: {repr(text)}")
+                                
+                                # Arduino typically sends one response per command
+                                # But wait a bit to see if more is coming
+                                time.sleep(0.1)
+                                if self.serial.in_waiting == 0:
+                                    break
+                        except UnicodeDecodeError as e:
+                            if debug:
+                                print(f"[DEBUG] Unicode decode error: {e}")
+                                print(f"[DEBUG] Raw line: {repr(line)}")
                 except Exception as e:
                     if debug:
-                        print(f"[DEBUG] Error reading response: {e}")
+                        print(f"[DEBUG] Error reading line: {e}")
                     break
             else:
                 # No data yet, wait a bit
-                time.sleep(0.01)
+                time.sleep(0.05)
+        
+        # If we didn't get a line-based response, try reading raw data
+        if not response_lines and self.serial.in_waiting > 0:
+            if debug:
+                print(f"[DEBUG] No line responses, trying raw read...")
+            try:
+                raw_data = self.serial.read(self.serial.in_waiting)
+                bytes_read += len(raw_data)
+                if debug:
+                    print(f"[DEBUG] Raw data: {repr(raw_data)}")
+                text = raw_data.decode('utf-8', errors='ignore').strip()
+                if text:
+                    response_lines.append(text)
+            except Exception as e:
+                if debug:
+                    print(f"[DEBUG] Error reading raw data: {e}")
         
         # Return the first meaningful response
         for line in response_lines:
