@@ -161,25 +161,25 @@ class SimpleInteractiveControl:
     def print_help(self):
         """Print help message"""
         print("""
-╔══════════════════════════════════════════════════════════════╗
-║          Simple Interactive RC Car Control                   ║
-╠══════════════════════════════════════════════════════════════╣
-║  Commands (press Enter after each):                          ║
-║    w        - Forward                                        ║
-║    s        - Backward                                       ║
-║    a        - Steer Left                                     ║
-║    d        - Steer Right                                    ║
-║    stop     - Stop Drive                                     ║
-║    space    - Stop Drive (same as stop)                      ║
-║    c        - Center Steering                                ║
-║    center   - Center Steering (same as c)                    ║
-║    x        - All Off                                        ║
-║    off      - All Off (same as x)                            ║
-║                                                              ║
-║    help     - Show this help                                ║
-║    quit     - Quit                                           ║
-║    q        - Quit (same as quit)                            ║
-╚══════════════════════════════════════════════════════════════╝
+==============================================================
+          Simple Interactive RC Car Control                   
+==============================================================
+  Commands (press Enter after each):                          
+    w        - Forward                                        
+    s        - Backward                                       
+    a        - Steer Left                                     
+    d        - Steer Right                                    
+    stop     - Stop Drive                                     
+    space    - Stop Drive (same as stop)                      
+    c        - Center Steering                                
+    center   - Center Steering (same as c)                    
+    x        - All Off                                        
+    off      - All Off (same as x)                            
+                                                                
+    help     - Show this help                                 
+    quit     - Quit                                           
+    q        - Quit (same as quit)                            
+==============================================================
 """)
     
     def run(self):

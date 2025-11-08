@@ -376,18 +376,22 @@ class InteractiveRCCarControl:
     def _run_with_terminal(self):
         """Run with terminal input (fallback when keyboard library not available)"""
         self.running = True
-        self.setup_terminal()
+        
+        # Only setup terminal if we haven't already (prevents double setup)
+        if self.old_settings is None:
+            self.setup_terminal()
         
         try:
             self.print_help()
             print("\nPress keys for control (Q to quit, H for help):")
             print("Note: Drive (W/S) is latched - press Space to stop")
-            print("Tip: Press and hold W/S, then release and press Space to stop\n")
+            print("Tip: Press and hold W/S, then release and press Space to stop")
+            print("Waiting for input...\n")
             
             # Track last drive command
             last_drive_command = None
-            last_input_time = 0
-            auto_stop_timeout = 2.0  # Auto-stop after 2 seconds of no input (increased for better control)
+            last_input_time = time.time()
+            auto_stop_timeout = 5.0  # Auto-stop after 5 seconds of no input (safety only)
             
             while self.running:
                 current_time = time.time()
@@ -395,36 +399,57 @@ class InteractiveRCCarControl:
                 char = None
                 
                 # Check if input is available (non-blocking)
-                if select.select([sys.stdin], [], [], 0.05)[0]:
-                    input_available = True
-                    char = sys.stdin.read(1)
-                    last_input_time = current_time
-                    
-                    # Handle special characters
-                    if ord(char) == 27:  # Escape sequence (arrow keys)
+                try:
+                    ready, _, _ = select.select([sys.stdin], [], [], 0.1)
+                    if ready:
+                        input_available = True
                         char = sys.stdin.read(1)
-                        if ord(char) == 91:  # [
-                            char = sys.stdin.read(1)
-                            if ord(char) == 65:  # Up arrow
-                                char = 'w'
-                            elif ord(char) == 66:  # Down arrow
-                                char = 's'
-                            elif ord(char) == 67:  # Right arrow
-                                char = 'd'
-                            elif ord(char) == 68:  # Left arrow
-                                char = 'a'
-                            else:
+                        last_input_time = current_time
+                        
+                        # Handle special characters (arrow keys)
+                        if char and ord(char) == 27:  # Escape sequence
+                            try:
+                                char2 = sys.stdin.read(1)
+                                if ord(char2) == 91:  # [
+                                    char3 = sys.stdin.read(1)
+                                    if ord(char3) == 65:  # Up arrow
+                                        char = 'w'
+                                    elif ord(char3) == 66:  # Down arrow
+                                        char = 's'
+                                    elif ord(char3) == 67:  # Right arrow
+                                        char = 'd'
+                                    elif ord(char3) == 68:  # Left arrow
+                                        char = 'a'
+                                    else:
+                                        char = None
+                                        input_available = False
+                                else:
+                                    char = None
+                                    input_available = False
+                            except (OSError, ValueError, IndexError):
                                 char = None
                                 input_available = False
+                except (OSError, ValueError) as e:
+                    # Terminal might be closed or invalid
+                    print(f"\nTerminal error: {e}")
+                    break
                 
                 # Process input
                 if input_available and char:
+                    # Skip null bytes and other control characters
+                    try:
+                        if ord(char) == 0:
+                            continue
+                    except (TypeError, ValueError):
+                        continue
+                    
                     char_lower = char.lower()
                     
                     if char_lower == 'q':
                         print("\n\nQuitting...")
                         if last_drive_command:
                             self.send_command(' ')
+                        self.running = False
                         break
                     elif char_lower == 'h':
                         print("\n")
@@ -464,16 +489,16 @@ class InteractiveRCCarControl:
                         self.send_command('x')
                         print("All Off", end='\r', flush=True)
                 
-                # Auto-stop drive if no input detected for a while (safety feature)
-                # Note: This is a safety timeout, not an auto-stop on key release
-                # Users should press Space to stop
+                # Auto-stop drive if no input detected for a while (safety feature only)
+                # Note: Users should press Space to stop manually
+                # This is just a safety timeout to prevent the car from running indefinitely
                 if last_drive_command and (current_time - last_input_time >= auto_stop_timeout):
                     self.send_command(' ')
                     last_drive_command = None
-                    print("Auto-stopped (safety timeout - press Space to stop)", end='\r', flush=True)
-                    time.sleep(0.1)  # Brief pause before clearing message
-                    print("Ready - press keys for control", end='\r', flush=True)
-                    last_input_time = current_time  # Reset to prevent repeated stops
+                    print("Auto-stopped (safety timeout)", end='\r', flush=True)
+                    time.sleep(0.2)
+                    print("Ready - press keys (W/S/A/D, Space=stop, Q=quit)", end='\r', flush=True)
+                    last_input_time = current_time + 1.0  # Reset to prevent repeated stops
         
         except KeyboardInterrupt:
             print("\n\nInterrupted. Stopping...")

@@ -108,20 +108,20 @@ class ContinuousRCCarControl:
             return False
         
         print("""
-╔══════════════════════════════════════════════════════════════╗
-║          Continuous RC Car Control                           ║
-╠══════════════════════════════════════════════════════════════╣
-║  Press and HOLD keys (release to stop):                       ║
-║    W / ↑    - Forward (hold to keep moving)                   ║
-║    S / ↓    - Backward (hold to keep moving)                  ║
-║    A / ←    - Steer Left (hold to keep turning)               ║
-║    D / →    - Steer Right (hold to keep turning)              ║
-║                                                              ║
-║    Space    - Stop Drive                                      ║
-║    C        - Center Steering                                 ║
-║    X        - All Off                                         ║
-║    Q        - Quit                                            ║
-╚══════════════════════════════════════════════════════════════╝
+==============================================================
+          Continuous RC Car Control                           
+==============================================================
+  Press and HOLD keys (release to stop):                       
+    W / Up    - Forward (hold to keep moving)                   
+    S / Down  - Backward (hold to keep moving)                  
+    A / Left  - Steer Left (hold to keep turning)               
+    D / Right - Steer Right (hold to keep turning)              
+                                                                
+    Space     - Stop Drive                                      
+    C         - Center Steering                                 
+    X         - All Off                                         
+    Q         - Quit                                            
+==============================================================
 """)
         print("Press keys to control (Q to quit)...\n")
         
@@ -166,24 +166,24 @@ class ContinuousRCCarControl:
     def run_basic(self):
         """Run with basic input (fallback)"""
         print("""
-╔══════════════════════════════════════════════════════════════╗
-║          Continuous RC Car Control (Basic Mode)              ║
-╠══════════════════════════════════════════════════════════════╣
-║  Type commands and press Enter:                              ║
-║    w+       - Start Forward (continuous)                     ║
-║    w-       - Stop Forward                                   ║
-║    s+       - Start Backward (continuous)                     ║
-║    s-       - Stop Backward                                  ║
-║    a+       - Start Left (continuous)                        ║
-║    a-       - Stop Left                                      ║
-║    d+       - Start Right (continuous)                       ║
-║    d-       - Stop Right                                     ║
-║                                                              ║
-║    stop     - Stop Drive                                     ║
-║    center   - Center Steering                                ║
-║    off      - All Off                                        ║
-║    quit     - Quit                                           ║
-╚══════════════════════════════════════════════════════════════╝
+==============================================================
+          Continuous RC Car Control (Basic Mode)              
+==============================================================
+  Type commands and press Enter:                              
+    w+       - Start Forward (continuous)                     
+    w-       - Stop Forward                                   
+    s+       - Start Backward (continuous)                     
+    s-       - Stop Backward                                  
+    a+       - Start Left (continuous)                        
+    a-       - Stop Left                                      
+    d+       - Start Right (continuous)                       
+    d-       - Stop Right                                     
+                                                                
+    stop     - Stop Drive                                     
+    center   - Center Steering                                
+    off      - All Off                                        
+    quit     - Quit                                           
+==============================================================
 """)
         
         self.running = True

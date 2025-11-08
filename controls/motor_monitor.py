@@ -208,28 +208,28 @@ class MotorMonitor:
         session_duration = stats['session_duration']
         
         summary = f"""
-╔══════════════════════════════════════════════════════════════╗
-║              Motor Control Session Summary                    ║
-╠══════════════════════════════════════════════════════════════╣
-║  Session Duration:      {session_duration:>8.1f} seconds            ║
-║  Total Commands:        {stats['total_commands']:>8}                  ║
-║  Commands/Second:       {stats['commands_per_second']:>8.2f}              ║
-║  Average Response:      {stats['average_response_time']*1000:>8.1f} ms            ║
-║  Errors:                {stats['errors']:>8}                  ║
-╠══════════════════════════════════════════════════════════════╣
-║  Commands by Type:                                           ║
-║    Forward:            {stats['commands_by_type'].get('forward', 0):>8}                  ║
-║    Backward:           {stats['commands_by_type'].get('backward', 0):>8}                  ║
-║    Left Turns:         {stats['total_left_turns']:>8}                  ║
-║    Right Turns:        {stats['total_right_turns']:>8}                  ║
-║    Stop:               {stats['commands_by_type'].get('stop', 0):>8}                  ║
-║    Center:             {stats['commands_by_type'].get('center', 0):>8}                  ║
-╠══════════════════════════════════════════════════════════════╣
-║  Drive Time:                                                 ║
-║    Forward:            {stats['total_forward_time']:>8.1f} seconds        ║
-║    Backward:           {stats['total_backward_time']:>8.1f} seconds        ║
-║    Current State:      {stats['current_drive_state'] or 'stopped':>8}            ║
-╚══════════════════════════════════════════════════════════════╝
+==============================================================
+              Motor Control Session Summary                    
+==============================================================
+  Session Duration:      {session_duration:>8.1f} seconds            
+  Total Commands:        {stats['total_commands']:>8}                  
+  Commands/Second:       {stats['commands_per_second']:>8.2f}              
+  Average Response:      {stats['average_response_time']*1000:>8.1f} ms            
+  Errors:                {stats['errors']:>8}                  
+==============================================================
+  Commands by Type:                                           
+    Forward:            {stats['commands_by_type'].get('forward', 0):>8}                  
+    Backward:           {stats['commands_by_type'].get('backward', 0):>8}                  
+    Left Turns:         {stats['total_left_turns']:>8}                  
+    Right Turns:        {stats['total_right_turns']:>8}                  
+    Stop:               {stats['commands_by_type'].get('stop', 0):>8}                  
+    Center:             {stats['commands_by_type'].get('center', 0):>8}                  
+==============================================================
+  Drive Time:                                                 
+    Forward:            {stats['total_forward_time']:>8.1f} seconds        
+    Backward:           {stats['total_backward_time']:>8.1f} seconds        
+    Current State:      {stats['current_drive_state'] or 'stopped':>8}            
+==============================================================
 """
         return summary
     

@@ -38,11 +38,14 @@ class RCCarService:
         self.baudrate = baudrate
         self.command_file = Path(command_file)
         self.socket_port = socket_port
-        self.serial: serial.Serial = None
+        self.serial = None
         self.running = False
         
     def connect_arduino(self):
         """Connect to Arduino"""
+        if not HAS_SERIAL:
+            print("Error: pyserial not available. Install with: pip3 install pyserial")
+            return False
         try:
             self.serial = serial.Serial(self.port, self.baudrate, timeout=1)
             time.sleep(2)
@@ -60,25 +63,28 @@ class RCCarService:
     
     def send_command(self, cmd: str):
         """Send command to Arduino"""
-        if not self.serial:
+        if not HAS_SERIAL or not self.serial:
             return "Not connected to Arduino"
         
         cmd_map = {
-            'w': 'W', 's': 'S', 'a': 'A', 'd': 'D',
+            'w': 'w', 's': 's', 'a': 'a', 'd': 'd',  # Use lowercase (Arduino accepts both)
             ' ': ' ', 'space': ' ', 'stop': ' ',
-            'c': 'C', 'center': 'C',
-            'x': 'X', 'off': 'X'
+            'c': 'c', 'center': 'c',
+            'x': 'x', 'off': 'x'
         }
         
-        cmd = cmd.lower().strip()
-        arduino_cmd = cmd_map.get(cmd, cmd.upper())
+        cmd_lower = cmd.lower().strip()
+        arduino_cmd = cmd_map.get(cmd_lower, cmd_lower[0] if cmd_lower else ' ')
         
-        self.serial.write(arduino_cmd.encode())
-        time.sleep(0.05)
-        
-        if self.serial.in_waiting > 0:
-            return self.serial.readline().decode().strip()
-        return "OK"
+        try:
+            self.serial.write(arduino_cmd.encode())
+            time.sleep(0.05)
+            
+            if self.serial.in_waiting > 0:
+                return self.serial.readline().decode().strip()
+            return "OK"
+        except Exception as e:
+            return f"Error: {e}"
     
     def file_based_server(self):
         """File-based command server"""

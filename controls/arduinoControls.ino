@@ -7,7 +7,7 @@ const int PIN_RIGHT = 6;  // Grey FM (Right)
 
 // ===== BEHAVIOR SWITCHES =====
 bool ACTIVE_LOW = false;          // set true if ON = LOW on your board
-bool USE_BRAKE_BEFOR            E_REV = false; // set true only if reverse needs a brake pulse
+bool USE_BRAKE_BEFORE_REV = false; // set true only if reverse needs a brake pulse
 
 
 // Steering tap length (ms)
