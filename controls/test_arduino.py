@@ -16,7 +16,7 @@ except ImportError:
     sys.exit(1)
 
 
-def test_arduino(port: str = '/dev/ttyACM0', baudrate: int = 9600, debug: bool = False):
+def test_arduino(port: str = '/dev/ttyACM0', baudrate: int = 115200, debug: bool = False):
     """Test Arduino connection and basic commands"""
     print(f"Testing Arduino connection on {port} at {baudrate} baud...")
     print("=" * 60)
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test Arduino connection and commands')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port (default: /dev/ttyACM0)')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Serial baud rate (default: 9600)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Serial baud rate (default: 115200)')
     parser.add_argument('--debug', '-d', action='store_true',
                        help='Enable debug output')
     

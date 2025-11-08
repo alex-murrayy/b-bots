@@ -12,7 +12,7 @@
 2. Open `controls/arduinoControls.ino`
 3. **IMPORTANT:** Make sure `while(!Serial)` is commented out:
    ```cpp
-   Serial.begin(9600);
+   Serial.begin(115200);
    // while (!Serial) is NOT used - allows Python/SSH connections
    delay(500);
    Serial.println(F("WASD + Test Mode Ready"));
@@ -21,7 +21,7 @@
 5. Select port: Your Arduino port
 6. Click **Upload**
 7. Wait for "Done uploading"
-8. **Open Serial Monitor** (9600 baud)
+8. **Open Serial Monitor** (115200 baud)
 9. **Verify you see:** "WASD + Test Mode Ready"
 10. **Type 'w' and press Enter**
 11. **You should see:** "FWD"
@@ -84,10 +84,10 @@ python3 controls/interactive_control.py
 
 **Controls:**
 
-- `W` or `↑` - Forward
-- `S` or `↓` - Backward
-- `A` or `←` - Steer Left
-- `D` or `→` - Steer Right
+- `W` - Forward
+- `S` - Backward
+- `A` - Steer Left
+- `D` - Steer Right
 - `Space` - Stop Drive
 - `C` - Center Steering
 - `X` - All Off

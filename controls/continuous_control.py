@@ -31,7 +31,7 @@ except ImportError:
 class ContinuousRCCarControl:
     """Continuous control with key press/release detection"""
     
-    def __init__(self, arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 9600,
+    def __init__(self, arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 115200,
                  script_path: str = None):
         self.arduino_port = arduino_port
         self.arduino_baudrate = arduino_baudrate
@@ -250,8 +250,8 @@ def main():
     parser = argparse.ArgumentParser(description='Continuous RC Car Control')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Arduino port')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Arduino baud rate (default: 9600)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Arduino baud rate (default: 115200)')
     parser.add_argument('--script', '-s', default=None,
                        help='Path to controller script')
     

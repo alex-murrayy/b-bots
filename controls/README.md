@@ -5,16 +5,19 @@ Complete control system for RC car with Arduino-based motor control using WASD p
 ## Quick Start
 
 ### 1. Setup Arduino
+
 - Upload `arduinoControls.ino` to your Arduino
 - Connect Arduino to Raspberry Pi via USB
 - Find port: `python3 controls/arduino_wasd_controller.py --list-ports`
 
 ### 2. Test Connection
+
 ```bash
 python3 controls/test_arduino.py
 ```
 
 ### 3. Run Interactive Control
+
 ```bash
 # Interactive control (recommended)
 python3 controls/interactive_control.py
@@ -27,10 +30,11 @@ python3 controls/interactive_control.py --monitor
 ```
 
 **Controls:**
-- `W` / `↑` - Forward
-- `S` / `↓` - Backward
-- `A` / `←` - Steer Left
-- `D` / `→` - Steer Right
+
+- `W` - Forward
+- `S` - Backward
+- `A` - Steer Left
+- `D` - Steer Right
 - `Space` - Stop Drive
 - `C` - Center Steering
 - `X` - All Off
@@ -41,6 +45,7 @@ See `QUICK_START.md` for detailed setup instructions.
 ## System Overview
 
 ### Hardware
+
 - **Arduino Uno R4** (or compatible) with `arduinoControls.ino` sketch
 - **Motor Driver** (L298N, TB6612FNG, DRV8833, or compatible)
 - **Drive Motor** (forward/reverse)
@@ -49,18 +54,21 @@ See `QUICK_START.md` for detailed setup instructions.
 ### Software Components
 
 1. **Arduino Sketch** (`arduinoControls.ino`)
+
    - WASD protocol (single character commands)
-   - 9600 baud serial communication
+   - 115200 baud serial communication
    - Latched drive, momentary steering
    - Test mode (press 't' to enter)
 
 2. **Python Controllers**
+
    - `arduino_wasd_controller.py` - Low-level controller class
    - `interactive_control.py` - Real-time keyboard control
    - `continuous_control.py` - Press-and-hold control
    - `simple_interactive.py` - Simple command-line interface
 
 3. **Remote Control**
+
    - `rc_car_service.py` - Background service on Raspberry Pi
    - `rc_car_client.py` - Client for remote control via SSH
 
@@ -71,24 +79,25 @@ See `QUICK_START.md` for detailed setup instructions.
 
 ### Command Protocol (WASD)
 
-| Command | Description | Arduino Behavior |
-|---------|-------------|------------------|
-| `w` | Forward | Latched (stays on until stopped) |
-| `s` | Backward | Latched (stays on until stopped) |
-| `a` | Steer Left | Momentary tap (200ms pulse) |
-| `d` | Steer Right | Momentary tap (200ms pulse) |
-| ` ` (space) | Stop Drive | Stops forward/backward |
-| `c` | Center Steering | Centers steering |
-| `x` | All Off | Stops everything |
-| `t` | Test Mode | Enter test mode on Arduino |
+| Command     | Description     | Arduino Behavior                 |
+| ----------- | --------------- | -------------------------------- |
+| `w`         | Forward         | Latched (stays on until stopped) |
+| `s`         | Backward        | Latched (stays on until stopped) |
+| `a`         | Steer Left      | Momentary tap (200ms pulse)      |
+| `d`         | Steer Right     | Momentary tap (200ms pulse)      |
+| ` ` (space) | Stop Drive      | Stops forward/backward           |
+| `c`         | Center Steering | Centers steering                 |
+| `x`         | All Off         | Stops everything                 |
+| `t`         | Test Mode       | Enter test mode on Arduino       |
 
 ### Interactive Control
 
 **Keyboard Controls:**
-- `W` / `↑` - Forward (release to auto-stop if keyboard library installed)
-- `S` / `↓` - Backward (release to auto-stop if keyboard library installed)
-- `A` / `←` - Steer Left
-- `D` / `→` - Steer Right
+
+- `W` - Forward (release to auto-stop if keyboard library installed)
+- `S` - Backward (release to auto-stop if keyboard library installed)
+- `A` - Steer Left
+- `D` - Steer Right
 - `Space` - Stop Drive
 - `C` - Center Steering
 - `X` - All Off
@@ -192,6 +201,7 @@ python3 ~/rc_car_control/arduino_wasd_controller.py --list-ports
 ```
 
 Common ports:
+
 - `/dev/ttyACM0` (most common for Arduino Uno)
 - `/dev/ttyUSB0` (if using USB-to-serial adapter)
 
@@ -254,6 +264,7 @@ sudo nano /etc/systemd/system/rc-car.service
 ```
 
 Add:
+
 ```ini
 [Unit]
 Description=RC Car Control Service
@@ -272,6 +283,7 @@ WantedBy=multi-user.target
 ```
 
 Enable and start:
+
 ```bash
 sudo systemctl enable rc-car.service
 sudo systemctl start rc-car.service
@@ -281,6 +293,7 @@ sudo systemctl status rc-car.service
 ## Monitoring and Benchmarking
 
 The `motor_monitor.py` module tracks:
+
 - Command execution timing
 - Drive time (forward/backward)
 - Turn counts (left/right)
@@ -318,6 +331,7 @@ The `motor_monitor.py` module tracks:
 ### Car Doesn't Stop When Releasing 'W'
 
 **Solution:** Install the `keyboard` library for proper key release detection:
+
 ```bash
 pip3 install keyboard
 ```
@@ -327,23 +341,27 @@ Or manually press `Space` to stop the car.
 ### Right Turn Doesn't Work
 
 **Solution:** This has been fixed. Ensure you're using the latest code:
+
 - `arduino_wasd_controller.py` sends lowercase 'd' command
 - `arduinoControls.ino` accepts both 'd' and 'D' (case-insensitive)
 
 ### Serial Port Not Found
 
 **Solution:** List available ports:
+
 ```bash
 python3 controls/arduino_wasd_controller.py --list-ports
 ```
 
 Common ports:
+
 - Linux/Mac: `/dev/ttyACM0`, `/dev/ttyUSB0`
 - Windows: `COM3`, `COM4`, etc.
 
 ### Permission Denied (Serial Port)
 
 **Solution:** Add user to dialout group:
+
 ```bash
 sudo usermod -a -G dialout $USER
 # Log out and log back in
@@ -352,6 +370,7 @@ sudo usermod -a -G dialout $USER
 ### Slow Response (Remote Control)
 
 **Solution:** Use service mode for faster response:
+
 ```bash
 # On Pi: Start service
 python3 ~/rc_car_control/rc_car_service.py --mode file &
@@ -363,6 +382,7 @@ python3 controls/interactive_control.py --host raspberrypi.local --service
 ### SSH Connection Issues
 
 **Solution:**
+
 - Ensure SSH is enabled on Raspberry Pi: `sudo systemctl enable ssh`
 - Check network connectivity: `ping raspberrypi.local`
 - Use IP address instead of hostname if DNS doesn't work
@@ -389,7 +409,7 @@ controls/
 
 ### Arduino Communication
 
-- **Baud Rate**: 9600
+- **Baud Rate**: 115200
 - **Protocol**: Single character commands
 - **Case**: Case-insensitive (accepts both 'w' and 'W')
 - **Drive**: Latched (remains active until stopped)
@@ -398,12 +418,13 @@ controls/
 ### Command Flow
 
 ```
-User Input → Python Controller → Serial (9600 baud) → Arduino → Motors
+User Input → Python Controller → Serial (115200 baud) → Arduino → Motors
 ```
 
 ### Response Handling
 
 Arduino sends responses via Serial.println():
+
 - `"FWD"` - Forward engaged
 - `"REV"` - Reverse engaged
 - `"LEFT TAP"` - Left turn executed

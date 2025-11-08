@@ -56,10 +56,10 @@ python3 controls/interactive_control.py
 
 **Controls:**
 
-- `W` or `↑` - Forward
-- `S` or `↓` - Backward
-- `A` or `←` - Steer Left
-- `D` or `→` - Steer Right
+- `W` - Forward
+- `S` - Backward
+- `A` - Steer Left
+- `D` - Steer Right
 - `Space` - Stop Drive
 - `C` - Center Steering
 - `X` - All Off
@@ -210,4 +210,4 @@ Once controls are working:
 - Check `controls/TROUBLESHOOTING.md` for common issues
 - Check `controls/RUN_ON_PI.md` for SSH setup
 - Run test script: `python3 controls/test_arduino.py --debug`
-- Check Arduino serial monitor for debug output (9600 baud)
+- Check Arduino serial monitor for debug output (115200 baud)

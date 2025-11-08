@@ -45,7 +45,7 @@ class InteractiveRCCarControl:
     def __init__(self, pi_host: str = None, pi_user: str = 'pi',
                  script_path: str = None,
                  use_service: bool = False, service_file: str = '/tmp/rc_car_command',
-                 arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 9600, local_mode: bool = None,
+                 arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 115200, local_mode: bool = None,
                  enable_monitor: bool = False):
         """
         Initialize interactive controller
@@ -57,7 +57,7 @@ class InteractiveRCCarControl:
             use_service: Use file-based service for faster response
             service_file: Command file path for service mode
             arduino_port: Arduino port for local mode
-            arduino_baudrate: Arduino baud rate (default: 9600)
+            arduino_baudrate: Arduino baud rate (default: 115200)
             local_mode: Force local mode (None = auto-detect)
         """
         self.pi_host = pi_host
@@ -226,10 +226,10 @@ class InteractiveRCCarControl:
           Interactive RC Car Control                          
 ==============================================================
   Controls:                                                    
-    W / Up Arrow    - Forward                                
-    S / Down Arrow  - Backward                               
-    A / Left Arrow  - Steer Left                             
-    D / Right Arrow - Steer Right                            
+    W               - Forward                                
+    S               - Backward                               
+    A               - Steer Left                             
+    D               - Steer Right                            
     Space           - Stop Drive                             
     C               - Center Steering                        
     X               - All Off                                
@@ -243,7 +243,7 @@ class InteractiveRCCarControl:
     def run(self):
         """Run interactive control loop"""
         # On Linux/Raspberry Pi, keyboard library requires root, so prefer terminal mode
-        # Terminal mode works well without root and handles arrow keys properly
+        # Terminal mode works well without root and handles WASD keys properly
         # Only use keyboard library if it's available AND we have root OR we're on macOS/Windows
         try:
             is_root = os.geteuid() == 0 if hasattr(os, 'geteuid') else False
@@ -323,21 +323,13 @@ class InteractiveRCCarControl:
             self.send_command('d')
             print("Right", end='\r', flush=True)
         
-        # Register keyboard hooks
+        # Register keyboard hooks (WASD keys only)
         keyboard.on_press_key('w', on_w_press)
         keyboard.on_release_key('w', on_w_release)
         keyboard.on_press_key('s', on_s_press)
         keyboard.on_release_key('s', on_s_release)
         keyboard.on_press_key('a', on_a_press)
         keyboard.on_press_key('d', on_d_press)
-        
-        # Arrow keys
-        keyboard.on_press_key('up', on_w_press)
-        keyboard.on_release_key('up', on_w_release)
-        keyboard.on_press_key('down', on_s_press)
-        keyboard.on_release_key('down', on_s_release)
-        keyboard.on_press_key('left', on_a_press)
-        keyboard.on_press_key('right', on_d_press)
         
         def on_space_press(_):
             nonlocal active_drive
@@ -422,7 +414,7 @@ class InteractiveRCCarControl:
                         char = sys.stdin.read(1)
                         last_input_time = current_time
                         
-                        # Handle special characters (arrow keys)
+                        # Handle escape sequences (arrow keys convert to WASD)
                         if char and ord(char) == 27:  # Escape sequence
                             try:
                                 char2 = sys.stdin.read(1)
@@ -549,8 +541,8 @@ def main():
                        help='Command file path for service mode')
     parser.add_argument('--arduino-port', '-p', default='/dev/ttyACM0',
                        help='Arduino port for local mode (default: /dev/ttyACM0)')
-    parser.add_argument('--arduino-baudrate', '-b', type=int, default=9600,
-                       help='Arduino baud rate (default: 9600)')
+    parser.add_argument('--arduino-baudrate', '-b', type=int, default=115200,
+                       help='Arduino baud rate (default: 115200)')
     parser.add_argument('--local', action='store_true',
                        help='Force local mode (skip SSH)')
     parser.add_argument('--remote', action='store_true',

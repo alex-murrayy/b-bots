@@ -72,7 +72,7 @@ void setup() {
   pinMode(PIN_RIGHT, OUTPUT);
   allOff();
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   // Note: while(!Serial) is NOT used - this allows Python/SSH connections
   // without needing Serial Monitor open. Only uncomment for debugging.
   // while (!Serial) { ; }
