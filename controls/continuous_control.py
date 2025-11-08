@@ -31,9 +31,10 @@ except ImportError:
 class ContinuousRCCarControl:
     """Continuous control with key press/release detection"""
     
-    def __init__(self, arduino_port: str = '/dev/ttyACM0', 
+    def __init__(self, arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 115200,
                  script_path: str = None):
         self.arduino_port = arduino_port
+        self.arduino_baudrate = arduino_baudrate
         self.script_path = script_path
         self.controller: Optional[ArduinoWASDController] = None
         self.running = False
@@ -48,9 +49,9 @@ class ContinuousRCCarControl:
         # Initialize controller
         if HAS_CONTROLLER:
             try:
-                self.controller = ArduinoWASDController(port=arduino_port)
+                self.controller = ArduinoWASDController(port=arduino_port, baudrate=arduino_baudrate)
                 if self.controller.connect():
-                    print(f"Connected to Arduino on {arduino_port}")
+                    print(f"Connected to Arduino on {arduino_port} at {arduino_baudrate} baud")
                 else:
                     self.controller = None
             except Exception as e:
@@ -249,6 +250,8 @@ def main():
     parser = argparse.ArgumentParser(description='Continuous RC Car Control')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Arduino port')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Arduino baud rate (default: 115200)')
     parser.add_argument('--script', '-s', default=None,
                        help='Path to controller script')
     
@@ -256,6 +259,7 @@ def main():
     
     controller = ContinuousRCCarControl(
         arduino_port=args.port,
+        arduino_baudrate=args.baudrate,
         script_path=args.script
     )
     

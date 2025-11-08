@@ -17,7 +17,7 @@ Your Arduino sketch **should** be sending responses, but Python isn't receiving 
 5. Click **Upload**
 6. Wait for "Done uploading"
 7. **Open Serial Monitor** (Tools -> Serial Monitor)
-8. **Set baud rate to 9600**
+8. **Set baud rate to 115200**
 9. **You should see:**
    ```
    WASD + Test Mode Ready
@@ -127,8 +127,8 @@ lsof /dev/ttyACM0
 **Solutions:**
 1. Re-upload sketch
 2. Check Serial Monitor shows messages
-3. Verify baud rate is 9600
-4. Check `Serial.begin(9600)` is in setup()
+3. Verify baud rate is 115200
+4. Check `Serial.begin(115200)` is in setup()
 
 ### Issue 4: Commands Sent But No Response
 

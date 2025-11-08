@@ -38,7 +38,7 @@ python3 controls/verify_sketch.py
 2. **Select your Arduino board** (Tools -> Board -> Arduino Uno R4 WiFi)
 3. **Select the port** (Tools -> Port -> /dev/ttyACM0)
 4. **Open Serial Monitor** (Tools -> Serial Monitor)
-5. **Set baud rate to 9600** (bottom right of Serial Monitor)
+5. **Set baud rate to 115200** (bottom right of Serial Monitor)
 6. **Check for messages:**
    - Should see: "WASD + Test Mode Ready"
    - Should see help text
@@ -59,7 +59,7 @@ python3 controls/verify_sketch.py
 
 ### Step 4: Test Manually in Serial Monitor
 
-1. **Open Serial Monitor** (9600 baud)
+1. **Open Serial Monitor** (115200 baud)
 2. **Type 'w' and press Enter**
 3. **You should see:**
    - Arduino sends: "FWD"
@@ -77,7 +77,7 @@ python3 controls/verify_sketch.py
 1. **Upload a simple test sketch:**
    ```cpp
    void setup() {
-     Serial.begin(9600);
+     Serial.begin(115200);
      pinMode(13, OUTPUT);
    }
    
@@ -103,8 +103,8 @@ python3 controls/verify_sketch.py
 
 **Solutions:**
 1. **Re-upload the sketch**
-2. **Check baud rate matches** (should be 9600)
-3. **Check Serial.begin(9600) is in setup()**
+2. **Check baud rate matches** (should be 115200)
+3. **Check Serial.begin(115200) is in setup()**
 4. **Verify sketch compiles without errors**
 
 ### Issue 2: Commands Sent But No Response
@@ -129,9 +129,9 @@ python3 controls/verify_sketch.py
 - Timeout errors
 
 **Solutions:**
-1. **Verify baud rate in sketch:** `Serial.begin(9600);`
-2. **Set Serial Monitor to 9600**
-3. **Use same baud rate in Python:** `baudrate=9600`
+1. **Verify baud rate in sketch:** `Serial.begin(115200);`
+2. **Set Serial Monitor to 115200**
+3. **Use same baud rate in Python:** `baudrate=115200`
 
 ### Issue 4: Arduino Resets on Connection
 
@@ -297,7 +297,7 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 # 4. Select port: /dev/ttyACM0
 # 5. Click Upload
 # 6. Wait for "Done uploading"
-# 7. Open Serial Monitor (9600 baud)
+# 7. Open Serial Monitor (115200 baud)
 # 8. Verify startup messages
 ```
 
@@ -305,16 +305,16 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 
 ```python
 # In arduinoControls.ino, verify:
-Serial.begin(9600);  // Must be 9600
+Serial.begin(115200);  // Must be 115200
 
 # In Python, verify:
-baudrate=9600  # Must match
+baudrate=115200  # Must match
 ```
 
 ### Fix 3: Test in Serial Monitor
 
 1. Open Arduino IDE Serial Monitor
-2. Set baud rate to 9600
+2. Set baud rate to 115200
 3. Type 'w' and press Enter
 4. Should see "FWD" response
 5. If you see this, communication works

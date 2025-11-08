@@ -10,7 +10,7 @@ import sys
 import argparse
 
 
-def test_communication(port: str = '/dev/ttyACM0', baudrate: int = 9600):
+def test_communication(port: str = '/dev/ttyACM0', baudrate: int = 115200):
     """Test communication with Arduino sketch"""
     print("=" * 70)
     print("ARDUINO COMMUNICATION TEST")
@@ -165,8 +165,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test Arduino communication')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Baud rate')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Baud rate (default: 115200)')
     args = parser.parse_args()
     
     success = test_communication(args.port, args.baudrate)

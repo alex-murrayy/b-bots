@@ -10,7 +10,7 @@ import sys
 import argparse
 
 
-def check_arduino(port: str = '/dev/ttyACM0', baudrate: int = 9600):
+def check_arduino(port: str = '/dev/ttyACM0', baudrate: int = 115200):
     """Check if Arduino is responding"""
     print(f"Checking Arduino on {port} at {baudrate} baud...")
     print("=" * 70)
@@ -145,7 +145,7 @@ def check_arduino(port: str = '/dev/ttyACM0', baudrate: int = 9600):
             print(f"   3. Arduino is in wrong mode")
             print(f"   4. Serial connection issue")
             print(f"\n   Recommendations:")
-            print(f"   - Open Arduino IDE Serial Monitor (9600 baud)")
+            print(f"   - Open Arduino IDE Serial Monitor (115200 baud)")
             print(f"   - Verify sketch is uploaded")
             print(f"   - Check if Arduino LED blinks on upload")
             print(f"   - Try different baud rate: python3 check_arduino.py --baudrate 115200")
@@ -170,8 +170,8 @@ def main():
     parser = argparse.ArgumentParser(description='Check Arduino connection and communication')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port (default: /dev/ttyACM0)')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Baud rate (default: 9600)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Baud rate (default: 115200)')
     
     args = parser.parse_args()
     check_arduino(args.port, args.baudrate)

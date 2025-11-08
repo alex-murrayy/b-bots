@@ -16,13 +16,13 @@ except ImportError:
     sys.exit(1)
 
 
-def test_arduino(port: str = '/dev/ttyACM0', debug: bool = False):
+def test_arduino(port: str = '/dev/ttyACM0', baudrate: int = 115200, debug: bool = False):
     """Test Arduino connection and basic commands"""
-    print(f"Testing Arduino connection on {port}...")
+    print(f"Testing Arduino connection on {port} at {baudrate} baud...")
     print("=" * 60)
     
     try:
-        controller = ArduinoWASDController(port=port, debug=debug)
+        controller = ArduinoWASDController(port=port, baudrate=baudrate, debug=debug)
         
         if not controller.connect(debug=debug):
             print("FAILED: Could not connect to Arduino")
@@ -150,8 +150,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test Arduino connection and commands')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port (default: /dev/ttyACM0)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Serial baud rate (default: 115200)')
     parser.add_argument('--debug', '-d', action='store_true',
                        help='Enable debug output')
     
     args = parser.parse_args()
-    test_arduino(port=args.port, debug=args.debug)
+    test_arduino(port=args.port, baudrate=args.baudrate, debug=args.debug)

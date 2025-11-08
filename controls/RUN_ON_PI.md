@@ -12,7 +12,7 @@
 2. Open `controls/arduinoControls.ino`
 3. **IMPORTANT:** Make sure `while(!Serial)` is commented out:
    ```cpp
-   Serial.begin(9600);
+   Serial.begin(115200);
    // while (!Serial) { ; }  // ← This line should be commented out!
    delay(500);
    Serial.println(F("WASD + Test Mode Ready"));
@@ -21,7 +21,7 @@
 5. Select port: Your Arduino port
 6. Click **Upload**
 7. Wait for "Done uploading"
-8. **Open Serial Monitor** (9600 baud)
+8. **Open Serial Monitor** (115200 baud)
 9. **Verify you see:** "WASD + Test Mode Ready"
 10. **Type 'w' and press Enter**
 11. **You should see:** "FWD"

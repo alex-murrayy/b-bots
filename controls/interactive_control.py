@@ -45,7 +45,7 @@ class InteractiveRCCarControl:
     def __init__(self, pi_host: str = None, pi_user: str = 'pi',
                  script_path: str = None,
                  use_service: bool = False, service_file: str = '/tmp/rc_car_command',
-                 arduino_port: str = '/dev/ttyACM0', local_mode: bool = None,
+                 arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 115200, local_mode: bool = None,
                  enable_monitor: bool = False):
         """
         Initialize interactive controller
@@ -57,6 +57,7 @@ class InteractiveRCCarControl:
             use_service: Use file-based service for faster response
             service_file: Command file path for service mode
             arduino_port: Arduino port for local mode
+            arduino_baudrate: Arduino baud rate (default: 115200)
             local_mode: Force local mode (None = auto-detect)
         """
         self.pi_host = pi_host
@@ -73,6 +74,7 @@ class InteractiveRCCarControl:
         self.use_service = use_service
         self.service_file = service_file
         self.arduino_port = arduino_port
+        self.arduino_baudrate = arduino_baudrate
         self.running = False
         self.old_settings = None
         self.local_controller = None
@@ -92,9 +94,9 @@ class InteractiveRCCarControl:
         # If running locally and controller available, use direct connection
         if self.is_local and HAS_CONTROLLER and not use_service:
             try:
-                self.local_controller = ArduinoWASDController(port=arduino_port, debug=False)
+                self.local_controller = ArduinoWASDController(port=arduino_port, baudrate=arduino_baudrate, debug=False)
                 if self.local_controller.connect(debug=False):
-                    print(f"Connected directly to Arduino on {arduino_port}")
+                    print(f"Connected directly to Arduino on {arduino_port} at {arduino_baudrate} baud")
                 else:
                     print("WARNING: Could not connect to Arduino, commands may not work")
                     self.local_controller = None
@@ -547,6 +549,8 @@ def main():
                        help='Command file path for service mode')
     parser.add_argument('--arduino-port', '-p', default='/dev/ttyACM0',
                        help='Arduino port for local mode (default: /dev/ttyACM0)')
+    parser.add_argument('--arduino-baudrate', '-b', type=int, default=115200,
+                       help='Arduino baud rate (default: 115200)')
     parser.add_argument('--local', action='store_true',
                        help='Force local mode (skip SSH)')
     parser.add_argument('--remote', action='store_true',
@@ -569,6 +573,7 @@ def main():
         use_service=args.service,
         service_file=args.service_file,
         arduino_port=args.arduino_port,
+        arduino_baudrate=args.arduino_baudrate,
         local_mode=local_mode,
         enable_monitor=args.monitor
     )

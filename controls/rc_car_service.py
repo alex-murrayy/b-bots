@@ -22,7 +22,7 @@ except ImportError:
 class RCCarService:
     """Service that runs on Raspberry Pi to control Arduino"""
     
-    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 9600,
+    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 115200,
                  command_file: str = '/tmp/rc_car_command',
                  socket_port: int = 8888):
         """
@@ -30,7 +30,7 @@ class RCCarService:
         
         Args:
             port: Arduino serial port
-            baudrate: Serial baud rate
+            baudrate: Serial baud rate (default: 115200)
             command_file: Path to command file for file-based communication
             socket_port: Port for socket-based communication
         """
@@ -194,8 +194,8 @@ def main():
     parser = argparse.ArgumentParser(description='RC Car Service for Raspberry Pi')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Arduino serial port')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Serial baud rate')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Serial baud rate (default: 115200)')
     parser.add_argument('--mode', '-m', choices=['file', 'socket', 'both'], 
                        default='file',
                        help='Communication mode')

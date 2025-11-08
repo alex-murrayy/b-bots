@@ -50,7 +50,7 @@ See `QUICK_START.md` for detailed setup instructions.
 
 1. **Arduino Sketch** (`arduinoControls.ino`)
    - WASD protocol (single character commands)
-   - 9600 baud serial communication
+   - 115200 baud serial communication
    - Latched drive, momentary steering
 
 2. **Python Controllers**
@@ -388,7 +388,7 @@ controls/
 
 ### Arduino Communication
 
-- **Baud Rate**: 9600
+- **Baud Rate**: 115200
 - **Protocol**: Single character commands
 - **Case**: Case-insensitive (accepts both 'w' and 'W')
 - **Drive**: Latched (remains active until stopped)
@@ -397,7 +397,7 @@ controls/
 ### Command Flow
 
 ```
-User Input → Python Controller → Serial (9600 baud) → Arduino → Motors
+User Input → Python Controller → Serial (115200 baud) → Arduino → Motors
 ```
 
 ### Response Handling

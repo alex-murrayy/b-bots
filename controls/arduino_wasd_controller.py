@@ -14,13 +14,13 @@ from typing import Optional
 class ArduinoWASDController:
     """Controller for Arduino using WASD command protocol"""
     
-    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 9600, debug: bool = False):
+    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 115200, debug: bool = False):
         """
         Initialize Arduino Controller
         
         Args:
             port: Serial port (typically /dev/ttyACM0 or /dev/ttyUSB0 on Raspberry Pi)
-            baudrate: Serial baud rate (default: 9600 to match Arduino sketch)
+            baudrate: Serial baud rate (default: 115200 to match Arduino sketch)
             debug: Enable debug output
         """
         self.port = port
@@ -359,8 +359,8 @@ def main():
     parser = argparse.ArgumentParser(description='Arduino WASD Controller for RC Car')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0', 
                        help='Serial port (default: /dev/ttyACM0)')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Serial baud rate (default: 9600)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Serial baud rate (default: 115200)')
     parser.add_argument('command', nargs='?', 
                        help='Command to execute: w(forward), s(backward), a(left), d(right), space(stop), c(center), x(off)')
     parser.add_argument('--interactive', '-i', action='store_true',

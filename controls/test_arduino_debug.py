@@ -16,13 +16,13 @@ except ImportError:
     sys.exit(1)
 
 
-def test_connection(port: str, debug: bool = False):
+def test_connection(port: str, baudrate: int = 115200, debug: bool = False):
     """Test basic connection to Arduino"""
     print(f"\n{'='*70}")
     print("TEST 1: Connection Test")
     print(f"{'='*70}")
     
-    controller = ArduinoWASDController(port=port, debug=debug)
+    controller = ArduinoWASDController(port=port, baudrate=baudrate, debug=debug)
     
     print(f"Attempting to connect to {port}...")
     if not controller.connect(debug=debug):
@@ -47,7 +47,7 @@ def test_connection(port: str, debug: bool = False):
     return controller
 
 
-def test_serial_communication(controller: ArduinoWASDController, debug: bool = False):
+def test_serial_communication(controller: ArduinoWASDController, baudrate: int = 115200, debug: bool = False):
     """Test serial communication"""
     print(f"\n{'='*70}")
     print("TEST 2: Serial Communication Test")
@@ -72,7 +72,7 @@ def test_serial_communication(controller: ArduinoWASDController, debug: bool = F
         return False
 
 
-def test_all_commands(controller: ArduinoWASDController, debug: bool = False):
+def test_all_commands(controller: ArduinoWASDController, baudrate: int = 115200, debug: bool = False):
     """Test all commands"""
     print(f"\n{'='*70}")
     print("TEST 3: Command Execution Test")
@@ -113,7 +113,7 @@ def test_all_commands(controller: ArduinoWASDController, debug: bool = False):
     return results
 
 
-def test_response_timing(controller: ArduinoWASDController, debug: bool = False):
+def test_response_timing(controller: ArduinoWASDController, baudrate: int = 115200, debug: bool = False):
     """Test response timing"""
     print(f"\n{'='*70}")
     print("TEST 4: Response Timing Test")
@@ -183,6 +183,8 @@ def main():
     parser = argparse.ArgumentParser(description='Comprehensive Arduino Test with Debugging')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port (default: /dev/ttyACM0)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Serial baud rate (default: 115200)')
     parser.add_argument('--debug', '-d', action='store_true',
                        help='Enable debug output')
     parser.add_argument('--test', choices=['all', 'connection', 'communication', 'commands', 'timing', 'raw'],
@@ -195,6 +197,7 @@ def main():
     print("ARDUINO COMPREHENSIVE TEST SUITE")
     print("="*70)
     print(f"Port: {args.port}")
+    print(f"Baud rate: {args.baudrate}")
     print(f"Debug: {args.debug}")
     print(f"Test: {args.test}")
     
@@ -203,24 +206,24 @@ def main():
     try:
         # Test 1: Connection
         if args.test in ['all', 'connection']:
-            controller = test_connection(args.port, debug=args.debug)
+            controller = test_connection(args.port, baudrate=args.baudrate, debug=args.debug)
             if not controller:
                 print("\nCannot continue without connection. Exiting.")
                 sys.exit(1)
         
         if not controller:
-            controller = ArduinoWASDController(port=args.port, debug=args.debug)
+            controller = ArduinoWASDController(port=args.port, baudrate=args.baudrate, debug=args.debug)
             if not controller.connect(debug=args.debug):
                 print("Failed to connect")
                 sys.exit(1)
         
         # Test 2: Serial Communication
         if args.test in ['all', 'communication']:
-            test_serial_communication(controller, debug=args.debug)
+            test_serial_communication(controller, baudrate=args.baudrate, debug=args.debug)
         
         # Test 3: All Commands
         if args.test in ['all', 'commands']:
-            results = test_all_commands(controller, debug=args.debug)
+            results = test_all_commands(controller, baudrate=args.baudrate, debug=args.debug)
             print(f"\n{'='*70}")
             print("COMMAND TEST SUMMARY")
             print(f"{'='*70}")
@@ -231,7 +234,7 @@ def main():
         
         # Test 4: Response Timing
         if args.test in ['all', 'timing']:
-            test_response_timing(controller, debug=args.debug)
+            test_response_timing(controller, baudrate=args.baudrate, debug=args.debug)
         
         # Test 5: Raw Serial
         if args.test in ['all', 'raw']:

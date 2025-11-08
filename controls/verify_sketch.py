@@ -9,7 +9,7 @@ import time
 import sys
 
 
-def verify_sketch(port: str = '/dev/ttyACM0', baudrate: int = 9600):
+def verify_sketch(port: str = '/dev/ttyACM0', baudrate: int = 115200):
     """Verify the Arduino sketch is running"""
     print("=" * 70)
     print("ARDUINO SKETCH VERIFICATION")
@@ -172,7 +172,7 @@ def verify_sketch(port: str = '/dev/ttyACM0', baudrate: int = 9600):
             print("1. Open Arduino IDE")
             print("2. Verify sketch 'arduinoControls.ino' is uploaded")
             print("3. Open Serial Monitor (Tools -> Serial Monitor)")
-            print("4. Set baud rate to 9600")
+            print("4. Set baud rate to 115200")
             print("5. Check if you see 'WASD + Test Mode Ready' message")
             print("6. Try sending 'w' manually and see if you get 'FWD' response")
             print("7. If nothing appears, re-upload the sketch")
@@ -191,8 +191,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Verify Arduino sketch is running')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Baud rate')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Baud rate (default: 115200)')
     args = parser.parse_args()
     verify_sketch(args.port, args.baudrate)
 

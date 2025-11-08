@@ -11,7 +11,7 @@ import argparse
 import threading
 
 
-def monitor_serial(port: str, baudrate: int = 9600):
+def monitor_serial(port: str, baudrate: int = 115200):
     """Monitor serial communication"""
     print(f"Monitoring serial port {port} at {baudrate} baud...")
     print("Press Ctrl+C to stop\n")
@@ -97,8 +97,8 @@ def main():
     parser = argparse.ArgumentParser(description='Serial Communication Debug Tool')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0',
                        help='Serial port (default: /dev/ttyACM0)')
-    parser.add_argument('--baudrate', '-b', type=int, default=9600,
-                       help='Baud rate (default: 9600)')
+    parser.add_argument('--baudrate', '-b', type=int, default=115200,
+                       help='Baud rate (default: 115200)')
     
     args = parser.parse_args()
     monitor_serial(args.port, args.baudrate)

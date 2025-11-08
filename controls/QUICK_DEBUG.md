@@ -8,7 +8,7 @@
 2. **Open `arduinoControls.ino`**
 3. **Verify the sketch has this in setup():**
    ```cpp
-   Serial.begin(9600);
+   Serial.begin(115200);
    while (!Serial) {
      ; // Wait for serial port to connect
    }
@@ -16,7 +16,7 @@
    Serial.println(F("WASD + Test Mode Ready"));
    ```
 4. **Upload the sketch**
-5. **Open Serial Monitor (9600 baud)**
+5. **Open Serial Monitor (115200 baud)**
 6. **Verify you see:** "WASD + Test Mode Ready"
 7. **Type 'w' and press Enter**
 8. **You should see:** "FWD"

@@ -83,7 +83,7 @@ void setup() {
   allOff();
 
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   // Note: while(!Serial) can block forever if no serial monitor is open
   // This causes issues when Python connects - the Arduino waits forever
   // For Raspberry Pi/Python control, we skip this wait

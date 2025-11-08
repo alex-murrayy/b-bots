@@ -29,7 +29,7 @@ class SimpleInteractiveControl:
     def __init__(self, pi_host: str = None, pi_user: str = 'pi',
                  script_path: str = None,
                  use_service: bool = False, service_file: str = '/tmp/rc_car_command',
-                 arduino_port: str = '/dev/ttyACM0', local_mode: bool = None):
+                 arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 115200, local_mode: bool = None):
         """
         Initialize controller
         
@@ -69,9 +69,9 @@ class SimpleInteractiveControl:
         # If running locally and controller available, use direct connection
         if self.is_local and HAS_CONTROLLER and not use_service:
             try:
-                self.local_controller = ArduinoWASDController(port=arduino_port)
+                self.local_controller = ArduinoWASDController(port=arduino_port, baudrate=arduino_baudrate)
                 if self.local_controller.connect():
-                    print(f"Connected directly to Arduino on {arduino_port}")
+                    print(f"Connected directly to Arduino on {arduino_port} at {arduino_baudrate} baud")
                 else:
                     self.local_controller = None
             except Exception as e:
@@ -247,6 +247,8 @@ def main():
                        help='Command file path for service mode')
     parser.add_argument('--arduino-port', '-p', default='/dev/ttyACM0',
                        help='Arduino port for local mode (default: /dev/ttyACM0)')
+    parser.add_argument('--arduino-baudrate', '-b', type=int, default=115200,
+                       help='Arduino baud rate (default: 115200)')
     parser.add_argument('--local', action='store_true',
                        help='Force local mode (skip SSH)')
     parser.add_argument('--remote', action='store_true',
@@ -269,6 +271,7 @@ def main():
         use_service=args.service,
         service_file=args.service_file,
         arduino_port=args.arduino_port,
+        arduino_baudrate=args.arduino_baudrate,
         local_mode=local_mode
     )
     

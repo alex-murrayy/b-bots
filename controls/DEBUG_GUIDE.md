@@ -30,6 +30,7 @@ python3 controls/verify_sketch.py
 ```
 
 **If this shows no startup messages → Arduino sketch is NOT running!**
+
 - Open Arduino IDE
 - Re-upload the sketch
 - Check Serial Monitor
@@ -168,7 +169,7 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 
 1. Verify sketch is uploaded: Check Arduino IDE
 2. Check Serial Monitor in Arduino IDE to see if commands are received
-3. Verify baud rate matches (9600)
+3. Verify baud rate matches (115200)
 
 **Test Arduino directly:**
 
