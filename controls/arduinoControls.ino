@@ -1,11 +1,14 @@
 // ===== YOUR PIN MAP =====
-// FIXED: Pin mappings corrected based on actual wiring
-// Original behavior: w->left, a->forward, d->reverse
-// Fixed mapping: w->forward, a->left, s->reverse, d->right
-const int PIN_FWD   = 8;  // Forward motor (pin 8 activates forward motor)
-const int PIN_REV   = 6;  // Reverse motor (pin 6 activates reverse motor)  
-const int PIN_LEFT  = 5;  // Left steering (pin 5 activates left motor)
-const int PIN_RIGHT = 7;  // Right steering (pin 7 activates right motor)
+// Based on actual behavior:
+// - 'w' (forward) turns left -> pin 5 is LEFT motor
+// - 'a' (left) goes forward -> pin 8 is FORWARD motor
+// - 'd' (right) reverses -> pin 6 is REVERSE motor
+// - Right not working -> pin 7 should be RIGHT motor
+
+const int PIN_FWD   = 8;  // Forward motor (pin 8 actually controls forward)
+const int PIN_REV   = 6;  // Reverse motor (pin 6 actually controls reverse)
+const int PIN_LEFT  = 5;  // Left steering (pin 5 actually controls left)
+const int PIN_RIGHT = 7;  // Right steering (pin 7 should control right)
 
 // ===== BEHAVIOR SWITCHES =====
 
@@ -74,14 +77,10 @@ void setup() {
   pinMode(PIN_RIGHT, OUTPUT);
   allOff();
 
-  Serial.begin(115200);
-  // Note: while(!Serial) is NOT used - this allows Python/SSH connections
-  // without needing Serial Monitor open. Only uncomment for debugging.
-  // while (!Serial) { ; }
-  delay(500);  // Give serial time to stabilize
+  Serial.begin(9600);
+  delay(100);
   Serial.println(F("WASD + Test Mode Ready"));
   printHelp();
-  Serial.flush();  // Ensure messages are sent
 }
 
 void handleTestMode(char c) {
