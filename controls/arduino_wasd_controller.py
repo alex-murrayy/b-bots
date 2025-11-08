@@ -59,6 +59,15 @@ class ArduinoWASDController:
         if not self.is_connected or not self.serial:
             raise RuntimeError("Not connected to Arduino. Call connect() first.")
         
+        # Ensure command is a single character (Arduino expects single char)
+        if len(command) > 1:
+            # For multi-char commands like 'space', convert to single char
+            if command.lower() == 'space' or command == ' ':
+                command = ' '
+            else:
+                command = command[0]  # Take first character
+        
+        # Send command - Arduino sketch expects single character
         self.serial.write(command.encode())
         time.sleep(0.05)  # Small delay for command processing
         
@@ -71,21 +80,21 @@ class ArduinoWASDController:
     
     def forward(self):
         """Move forward (W command)"""
-        return self._send_command('W')
+        return self._send_command('w')
     
     def backward(self):
         """Move backward (S command)"""
-        return self._send_command('S')
+        return self._send_command('s')
     
     def left(self):
         """Steer left tap (A command)"""
-        return self._send_command('A')
+        return self._send_command('a')
     
     def right(self):
         """Steer right tap (D command)"""
-        # Send 'D' command (uppercase as per Arduino sketch)
-        # The Arduino sketch expects 'D' for right turn
-        return self._send_command('D')
+        # Send 'd' or 'D' command - Arduino accepts both (case-insensitive)
+        # Using lowercase to match other commands
+        return self._send_command('d')
     
     def stop(self):
         """Stop drive (space command)"""
@@ -93,15 +102,15 @@ class ArduinoWASDController:
     
     def center(self):
         """Center steering (C command)"""
-        return self._send_command('C')
+        return self._send_command('c')
     
     def all_off(self):
         """Turn everything off (X command)"""
-        return self._send_command('X')
+        return self._send_command('x')
     
     def test_mode(self):
         """Enter test mode (T command)"""
-        return self._send_command('T')
+        return self._send_command('t')
     
     def execute_command(self, cmd: str) -> Optional[str]:
         """

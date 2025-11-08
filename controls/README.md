@@ -1,251 +1,401 @@
-# RC Car Motor Control - Arduino Sketch
+# RC Car Controls System
 
-Arduino Uno R4 sketch for controlling RC car with single drive motor and servo steering via serial commands.
+Complete control system for RC car with Arduino-based motor control using WASD protocol.
 
-## Hardware Requirements
-
-- **Arduino Uno R4** (or compatible)
-- **Motor Driver Board** (L298N, TB6612FNG, DRV8833, or similar)
-- **1x DC Motor** for drive (forward/reverse)
-- **1x Servo Motor** for steering
-- **Power Supply** (appropriate for your motors)
-
-## Wiring Guide
-
-### Motor Driver Connections
-
-#### L298N / L293D Configuration (Single Motor)
-```
-Drive Motor:
-- IN1 → Arduino Pin 2
-- IN2 → Arduino Pin 4
-- ENA → Arduino Pin 5 (PWM)
-- Motor + → OUT1
-- Motor - → OUT2
-
-Power:
-- VCC → 5V (if needed for logic)
-- GND → GND
-- Motor Power → External power supply (7-12V typical)
-```
-
-#### TB6612FNG Configuration (Single Motor Channel)
-```
-Drive Motor (Motor A):
-- AIN1 → Arduino Pin 2
-- AIN2 → Arduino Pin 4
-- PWMA → Arduino Pin 5 (PWM)
-- AO1 → Drive Motor +
-- AO2 → Drive Motor -
-
-Control:
-- STBY → Arduino Pin 12
-- VM → Motor Power (2.5V-13.5V)
-- VCC → 5V
-- GND → GND
-```
-
-#### Steering Servo
-```
-Servo Motor:
-- Signal → Arduino Pin 10
-- Power → 5V (or external supply if needed)
-- Ground → GND
-```
-
-## Serial Commands
-
-The sketch accepts the following commands via Serial (115200 baud):
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `F<speed>` | Move Forward | `F200` (forward at speed 200) |
-| `B<speed>` | Move Backward | `B150` (backward at speed 150) |
-| `S` | Stop | `S` |
-| `ST<angle>` | Set Steering Angle | `ST90` (center), `ST45` (left), `ST135` (right) |
-| `L<angle>` | Turn Left (relative) | `L30` (30 degrees left from center) |
-| `R<angle>` | Turn Right (relative) | `R30` (30 degrees right from center) |
-
-### Command Details
-
-- **Speed Range**: 0-255 (0 = stop, 255 = full speed)
-- **Steering Angle**: 0-180 degrees (90 = center, 0-45 = left range, 135-180 = right range)
-- **Turn Commands (L/R)**: 0-45 degrees offset from center
-
-### Example Commands
+## Quick Start
 
 ```bash
-# Move forward at half speed
-F128
+# Interactive control (recommended)
+python3 controls/interactive_control.py
 
-# Turn left while moving forward
-ST45
-F200
+# Simple command-line control
+python3 controls/simple_interactive.py
 
-# Turn right using relative command
-R30
-F200
-
-# Stop
-S
-
-# Set steering to center
-ST90
-
-# Move backward
-B150
+# With monitoring/benchmarking
+python3 controls/interactive_control.py --monitor
 ```
 
-## Configuration
+## System Overview
 
-### Selecting Your Motor Driver
+### Hardware
+- **Arduino Uno R4** (or compatible) with `arduinoControls.ino` sketch
+- **Motor Driver** (L298N, TB6612FNG, DRV8833, or compatible)
+- **Drive Motor** (forward/reverse)
+- **Steering Motor/Servo** (left/right)
 
-Edit the sketch and uncomment the appropriate driver define:
+### Software Components
 
-```cpp
-// For L298N / L293D
-#define DRIVER_L298N
+1. **Arduino Sketch** (`arduinoControls.ino`)
+   - WASD protocol (single character commands)
+   - 9600 baud serial communication
+   - Latched drive, momentary steering
 
-// For TB6612FNG
-// #define DRIVER_TB6612
+2. **Python Controllers**
+   - `arduino_wasd_controller.py` - Low-level controller class
+   - `interactive_control.py` - Real-time keyboard control
+   - `continuous_control.py` - Press-and-hold control
+   - `simple_interactive.py` - Simple command-line interface
 
-// For DRV8833
-// #define DRIVER_DRV8833
+3. **Remote Control**
+   - `rc_car_service.py` - Background service on Raspberry Pi
+   - `rc_car_client.py` - Client for remote control via SSH
+
+4. **Monitoring**
+   - `motor_monitor.py` - Performance monitoring and benchmarking
+
+## Controls
+
+### Command Protocol (WASD)
+
+| Command | Description | Arduino Behavior |
+|---------|-------------|------------------|
+| `w` | Forward | Latched (stays on until stopped) |
+| `s` | Backward | Latched (stays on until stopped) |
+| `a` | Steer Left | Momentary tap (200ms pulse) |
+| `d` | Steer Right | Momentary tap (200ms pulse) |
+| ` ` (space) | Stop Drive | Stops forward/backward |
+| `c` | Center Steering | Centers steering |
+| `x` | All Off | Stops everything |
+| `t` | Test Mode | Enter test mode on Arduino |
+
+### Interactive Control
+
+**Keyboard Controls:**
+- `W` / `↑` - Forward (release to auto-stop if keyboard library installed)
+- `S` / `↓` - Backward (release to auto-stop if keyboard library installed)
+- `A` / `←` - Steer Left
+- `D` / `→` - Steer Right
+- `Space` - Stop Drive
+- `C` - Center Steering
+- `X` - All Off
+- `Q` - Quit
+- `H` - Help
+
+## Usage
+
+### Local Control
+
+```bash
+# Interactive control (best experience)
+python3 controls/interactive_control.py
+
+# Simple command-line
+python3 controls/simple_interactive.py
+
+# Continuous control (press and hold)
+python3 controls/continuous_control.py
 ```
+
+### Remote Control (via Raspberry Pi)
+
+```bash
+# Interactive control via SSH
+python3 controls/interactive_control.py --host raspberrypi.local
+
+# With service mode (faster)
+python3 controls/interactive_control.py --host raspberrypi.local --service
+
+# Simple command-line
+python3 controls/simple_interactive.py --host raspberrypi.local
+```
+
+### Monitoring and Benchmarking
+
+```bash
+# Run with monitoring
+python3 controls/interactive_control.py --monitor
+
+# View real-time stats
+# Stats are printed automatically during control session
+```
+
+## Arduino Setup
+
+### Upload Sketch
+
+1. Open `arduinoControls.ino` in Arduino IDE
+2. Select your Arduino board (Arduino Uno R4)
+3. Select the correct port
+4. Upload the sketch
 
 ### Pin Configuration
 
-If your wiring differs, modify the pin definitions in the sketch:
+Edit `arduinoControls.ino` to match your wiring:
 
 ```cpp
-// Drive Motor Pins
-const int DRIVE_MOTOR_PIN1 = 2;
-const int DRIVE_MOTOR_PIN2 = 4;
-const int DRIVE_MOTOR_PWM = 5;
-
-// Steering Servo
-const int STEERING_SERVO_PIN = 10;
-
-// Standby Pin (if used by your driver)
-const int STBY_PIN = 12;
+const int PIN_FWD   = 5;  // Forward pin
+const int PIN_REV   = 7;  // Reverse pin
+const int PIN_LEFT  = 8;  // Left steering pin
+const int PIN_RIGHT = 6;  // Right steering pin
 ```
 
-## Testing
+### Configuration Options
 
-1. **Upload the sketch** to your Arduino Uno R4
-2. **Open Serial Monitor** (Tools → Serial Monitor)
-3. **Set baud rate** to 115200
-4. **Send test commands**:
-   - `F100` - Should move forward slowly
-   - `ST45` - Should turn steering left
-   - `S` - Should stop
+```cpp
+bool ACTIVE_LOW = false;          // Set true if ON = LOW
+bool USE_BRAKE_BEFORE_REV = false; // Set true if reverse needs brake
+int steerPulse = 200;             // Steering pulse duration (ms)
+```
 
-## Integration with Python Delivery System
+## Raspberry Pi Setup
 
-You can integrate this with the Python delivery system by creating a serial communication module:
+### 1. Install Dependencies
 
-```python
-import serial
-import time
+```bash
+# On Raspberry Pi
+pip3 install pyserial
+```
 
-class RCCarController:
-    def __init__(self, port='/dev/ttyUSB0', baudrate=115200):
-        self.serial = serial.Serial(port, baudrate, timeout=1)
-        time.sleep(2)  # Wait for Arduino to initialize
-    
-    def forward(self, speed=200):
-        """Move forward at specified speed (0-255)"""
-        self.serial.write(f'F{speed}\n'.encode())
-        time.sleep(0.1)  # Small delay for command processing
-    
-    def backward(self, speed=200):
-        """Move backward at specified speed (0-255)"""
-        self.serial.write(f'B{speed}\n'.encode())
-        time.sleep(0.1)
-    
-    def stop(self):
-        """Stop the drive motor"""
-        self.serial.write('S\n'.encode())
-        time.sleep(0.1)
-    
-    def set_steering(self, angle):
-        """Set steering angle (0-180, 90=center)"""
-        angle = max(0, min(180, angle))  # Constrain to 0-180
-        self.serial.write(f'ST{angle}\n'.encode())
-        time.sleep(0.1)
-    
-    def turn_left(self, angle_offset=30):
-        """Turn left by specified degrees from center (0-45)"""
-        angle_offset = max(0, min(45, angle_offset))
-        self.serial.write(f'L{angle_offset}\n'.encode())
-        time.sleep(0.1)
-    
-    def turn_right(self, angle_offset=30):
-        """Turn right by specified degrees from center (0-45)"""
-        angle_offset = max(0, min(45, angle_offset))
-        self.serial.write(f'R{angle_offset}\n'.encode())
-        time.sleep(0.1)
-    
-    def center_steering(self):
-        """Center the steering"""
-        self.set_steering(90)
-    
-    def close(self):
-        """Close serial connection"""
-        self.stop()
-        self.center_steering()
-        self.serial.close()
+### 2. Copy Files to Raspberry Pi
 
-# Example usage
-if __name__ == '__main__':
-    car = RCCarController('/dev/ttyUSB0')  # Adjust port for your system
-    try:
-        # Move forward with steering
-        car.forward(200)
-        car.set_steering(45)  # Turn left
-        time.sleep(2)
-        
-        # Center and continue
-        car.center_steering()
-        time.sleep(1)
-        
-        # Stop
-        car.stop()
-    finally:
-        car.close()
+From your laptop, copy the controller script to your Raspberry Pi:
+
+```bash
+# Create directory
+ssh pi@raspberrypi.local "mkdir -p ~/rc_car_control"
+
+# Copy files
+scp controls/arduino_wasd_controller.py pi@raspberrypi.local:~/rc_car_control/
+scp controls/rc_car_service.py pi@raspberrypi.local:~/rc_car_control/
+```
+
+### 3. Find Arduino Port
+
+On the Raspberry Pi, find which port the Arduino is connected to:
+
+```bash
+python3 ~/rc_car_control/arduino_wasd_controller.py --list-ports
+```
+
+Common ports:
+- `/dev/ttyACM0` (most common for Arduino Uno)
+- `/dev/ttyUSB0` (if using USB-to-serial adapter)
+
+### 4. Test Connection
+
+Test the connection directly on the Raspberry Pi:
+
+```bash
+python3 ~/rc_car_control/arduino_wasd_controller.py -p /dev/ttyACM0 -i
+```
+
+This will start interactive mode. Try commands: `w`, `s`, `a`, `d`, `space`, `c`, `x`
+
+### 5. Remote Control Methods
+
+**Method 1: Direct SSH Command Execution**
+
+From your laptop, send commands directly:
+
+```bash
+# Forward
+ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py w"
+
+# Backward
+ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py s"
+
+# Left
+ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py a"
+
+# Right
+ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py d"
+
+# Stop
+ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py space"
+```
+
+**Method 2: Background Service (Recommended)**
+
+Set up a background service on the Raspberry Pi:
+
+```bash
+# On Raspberry Pi: Start the service
+python3 ~/rc_car_control/rc_car_service.py --mode file --port /dev/ttyACM0 &
+
+# From laptop: Send commands via file
+ssh pi@raspberrypi.local "echo 'w' > /tmp/rc_car_command"
+ssh pi@raspberrypi.local "echo 's' > /tmp/rc_car_command"
+ssh pi@raspberrypi.local "echo 'a' > /tmp/rc_car_command"
+ssh pi@raspberrypi.local "echo 'd' > /tmp/rc_car_command"
+ssh pi@raspberrypi.local "echo 'space' > /tmp/rc_car_command"
+```
+
+**Method 3: Systemd Service (Auto-start)**
+
+Create a systemd service for automatic startup:
+
+```bash
+# On Raspberry Pi
+sudo nano /etc/systemd/system/rc-car.service
+```
+
+Add:
+```ini
+[Unit]
+Description=RC Car Control Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/rc_car_control
+ExecStart=/usr/bin/python3 /home/pi/rc_car_control/rc_car_service.py --mode file --port /dev/ttyACM0
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl enable rc-car.service
+sudo systemctl start rc-car.service
+sudo systemctl status rc-car.service
+```
+
+## Monitoring and Benchmarking
+
+The `motor_monitor.py` module tracks:
+- Command execution timing
+- Drive time (forward/backward)
+- Turn counts (left/right)
+- Response times
+- Error rates
+- Session statistics
+
+### Example Output
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║              Motor Control Session Summary                    ║
+╠══════════════════════════════════════════════════════════════╣
+║  Session Duration:          120.5 seconds                    ║
+║  Total Commands:               45                            ║
+║  Commands/Second:            0.37                            ║
+║  Average Response:           45.2 ms                         ║
+║  Errors:                       0                             ║
+╠══════════════════════════════════════════════════════════════╣
+║  Commands by Type:                                           ║
+║    Forward:                   12                             ║
+║    Backward:                   3                             ║
+║    Left Turns:                15                             ║
+║    Right Turns:               12                             ║
+║    Stop:                       8                             ║
+╠══════════════════════════════════════════════════════════════╣
+║  Drive Time:                                                 ║
+║    Forward:           45.3 seconds                           ║
+║    Backward:           8.2 seconds                           ║
+╚══════════════════════════════════════════════════════════════╝
 ```
 
 ## Troubleshooting
 
-### Motors Not Responding
-- Check power supply connections
-- Verify motor driver is enabled (STBY pin for TB6612FNG)
-- Check pin connections match the sketch configuration
-- Ensure motor driver has sufficient power (check voltage requirements)
+### Car Doesn't Stop When Releasing 'W'
 
-### Motor Running in Wrong Direction
-- Swap the motor wires connected to the driver outputs, OR
-- Swap DRIVE_MOTOR_PIN1 and DRIVE_MOTOR_PIN2 connections in the sketch
+**Solution:** Install the `keyboard` library for proper key release detection:
+```bash
+pip3 install keyboard
+```
 
-### Servo Not Responding
-- Check servo signal wire is on correct pin
-- Verify servo power supply (may need external 5V supply)
-- Check servo angle range (typically 0-180 degrees)
+Or manually press `Space` to stop the car.
 
-### Serial Communication Issues
-- Verify baud rate is set to 115200
-- Check USB cable connection
-- Ensure no other program is using the serial port
+### Right Turn Doesn't Work
+
+**Solution:** This has been fixed. Ensure you're using the latest code:
+- `arduino_wasd_controller.py` sends lowercase 'd' command
+- `arduinoControls.ino` accepts both 'd' and 'D' (case-insensitive)
+
+### Serial Port Not Found
+
+**Solution:** List available ports:
+```bash
+python3 controls/arduino_wasd_controller.py --list-ports
+```
+
+Common ports:
+- Linux/Mac: `/dev/ttyACM0`, `/dev/ttyUSB0`
+- Windows: `COM3`, `COM4`, etc.
+
+### Permission Denied (Serial Port)
+
+**Solution:** Add user to dialout group:
+```bash
+sudo usermod -a -G dialout $USER
+# Log out and log back in
+```
+
+### Slow Response (Remote Control)
+
+**Solution:** Use service mode for faster response:
+```bash
+# On Pi: Start service
+python3 ~/rc_car_control/rc_car_service.py --mode file &
+
+# From laptop: Use service mode
+python3 controls/interactive_control.py --host raspberrypi.local --service
+```
+
+### SSH Connection Issues
+
+**Solution:**
+- Ensure SSH is enabled on Raspberry Pi: `sudo systemctl enable ssh`
+- Check network connectivity: `ping raspberrypi.local`
+- Use IP address instead of hostname if DNS doesn't work
+- Set up SSH keys: `ssh-copy-id pi@raspberrypi.local`
+
+## File Structure
+
+```
+controls/
+├── arduinoControls.ino          # Arduino sketch (WASD protocol)
+├── arduino_wasd_controller.py   # Main controller class
+├── interactive_control.py       # Real-time interactive control
+├── continuous_control.py        # Press-and-hold control
+├── simple_interactive.py        # Simple CLI control
+├── rc_car_service.py            # Background service
+├── rc_car_client.py             # Remote client
+├── motor_monitor.py             # Monitoring/benchmarking
+├── quick_control.sh             # Quick control script
+├── setup_pi.sh                  # Pi setup script
+└── README.md                    # This file
+```
+
+## Protocol Details
+
+### Arduino Communication
+
+- **Baud Rate**: 9600
+- **Protocol**: Single character commands
+- **Case**: Case-insensitive (accepts both 'w' and 'W')
+- **Drive**: Latched (remains active until stopped)
+- **Steering**: Momentary (200ms pulse, auto-centers)
+
+### Command Flow
+
+```
+User Input → Python Controller → Serial (9600 baud) → Arduino → Motors
+```
+
+### Response Handling
+
+Arduino sends responses via Serial.println():
+- `"FWD"` - Forward engaged
+- `"REV"` - Reverse engaged
+- `"LEFT TAP"` - Left turn executed
+- `"RIGHT TAP"` - Right turn executed
+- `"NEUTRAL DRIVE"` - Drive stopped
+- `"CENTER"` - Steering centered
+- `"ALL OFF"` - Everything stopped
 
 ## Safety Notes
 
 - Always test with low speeds first
 - Ensure adequate power supply for motors
 - Use appropriate fuses for overcurrent protection
-- Be careful with high-speed movements during testing
 - Keep hands clear of moving parts during operation
+- The system includes auto-stop safety features
 
 ## License
 
 This code is provided as-is for educational and development purposes.
-

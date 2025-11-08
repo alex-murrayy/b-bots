@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UB Food Delivery - Orders</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #005bbb 0%, #003d7a 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            border: 2px solid rgba(0, 91, 187, 0.1);
+        }
+        
+        .header {
+            background: #005bbb;
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 91, 187, 0.4);
+            border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 12px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header p {
+            opacity: 1;
+            font-size: 1.2em;
+            font-weight: 500;
+            margin-top: 8px;
+            letter-spacing: 0.3px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+        
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.35);
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #005bbb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .orders-list {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .order-card {
+            border: 2px solid #d0d0d0;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s;
+            background: #ffffff;
+            border-left: 4px solid #005bbb;
+        }
+        
+        .order-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: #005bbb;
+            transform: translateY(-2px);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .order-id {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: #005bbb;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-badge {
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 2px solid transparent;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-in-progress {
+            background: #cfe2ff;
+            color: #005bbb;
+        }
+        
+        .status-completed {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .items-list {
+            margin-top: 10px;
+        }
+        
+        .items-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .items-list li {
+            padding: 5px 0;
+            color: #666;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .refresh-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #005bbb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            background: #004499;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ORDERS</h1>
+            <p>UNIVERSITY AT BUFFALO</p>
+            <p style="margin-top: 12px; font-size: 1em; font-weight: 400; opacity: 0.95;">Delivery Order Management</p>
+            <div class="nav-links">
+                <a href="/">Place Order</a>
+                <a href="/orders">View Orders</a>
+                <a href="/status">Status</a>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading orders...</p>
+            </div>
+            
+            <div id="orders-container" style="display: none;">
+                <button class="refresh-btn" onclick="loadOrders()">Refresh</button>
+                <div id="orders-list" class="orders-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function formatStatus(status) {
+            return status.replace('_', ' ').toUpperCase();
+        }
+        
+        function getStatusClass(status) {
+            if (status === 'pending') return 'status-pending';
+            if (status === 'in_progress') return 'status-in-progress';
+            if (status === 'completed') return 'status-completed';
+            return 'status-pending';
+        }
+        
+        function createOrderCard(order) {
+            return `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">${order.order_id}</div>
+                        <div class="status-badge ${getStatusClass(order.status)}">
+                            ${formatStatus(order.status)}
+                        </div>
+                    </div>
+                    <div class="order-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Customer</div>
+                            <div class="detail-value">${order.customer_name}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Route</div>
+                            <div class="detail-value">${order.pickup_location} → ${order.delivery_location}</div>
+                        </div>
+                    </div>
+                    <div class="items-list">
+                        <div class="detail-label">Items:</div>
+                        <ul>
+                            ${order.items.map(item => `<li>• ${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ${order.created_at ? `<div class="detail-label" style="margin-top: 10px;">Created: ${new Date(order.created_at).toLocaleString()}</div>` : ''}
+                </div>
+            `;
+        }
+        
+        async function loadOrders() {
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('orders-container');
+            const ordersList = document.getElementById('orders-list');
+            
+            loading.style.display = 'block';
+            container.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/orders');
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                container.style.display = 'block';
+                
+                if (data.orders && data.orders.length > 0) {
+                    ordersList.innerHTML = data.orders.map(order => createOrderCard(order)).join('');
+                } else {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <h2>No orders yet</h2>
+                            <p>Place your first order to get started!</p>
+                            <a href="/" style="display: inline-block; margin-top: 20px; padding: 12px 30px; background: #005bbb; color: white; text-decoration: none; border-radius: 8px;">Place Order</a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                container.style.display = 'block';
+                ordersList.innerHTML = `
+                    <div class="empty-state">
+                        <h2>Error loading orders</h2>
+                        <p>${error.message}</p>
+                        <button class="refresh-btn" onclick="loadOrders()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load orders on page load
+        loadOrders();
+        
+        // Auto-refresh every 5 seconds
+        setInterval(loadOrders, 5000);
+    </script>
+</body>
+</html>
+

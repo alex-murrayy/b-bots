@@ -4,8 +4,14 @@
 # Core dependencies
 pyserial>=3.5  # For Arduino serial communication
 
+# Web app dependencies
+flask>=2.0.0  # Web framework for order app and Pi server
+flask-cors>=3.0.0  # CORS support for cross-origin requests
+requests>=2.25.0  # HTTP library for API calls
+
 # Optional dependencies for enhanced features:
 # matplotlib>=3.5.0  # For visualization
 # networkx>=2.6.0    # For advanced graph algorithms
 # numpy>=1.21.0      # For numerical computations
+# keyboard>=0.13.0   # For keyboard input (for interactive control)
 

@@ -13,6 +13,7 @@ import argparse
 import os
 import socket
 import time
+import threading
 from typing import Optional
 
 # Try to import the Arduino controller for direct connection
@@ -22,6 +23,21 @@ try:
 except ImportError:
     HAS_CONTROLLER = False
 
+# Try to import keyboard library for proper key release detection
+try:
+    import keyboard
+    HAS_KEYBOARD = True
+except ImportError:
+    HAS_KEYBOARD = False
+
+# Try to import motor monitor
+try:
+    from motor_monitor import MotorMonitor
+    HAS_MONITOR = True
+except ImportError:
+    HAS_MONITOR = False
+    MotorMonitor = None
+
 
 class InteractiveRCCarControl:
     """Interactive real-time RC car controller"""
@@ -29,7 +45,8 @@ class InteractiveRCCarControl:
     def __init__(self, pi_host: str = None, pi_user: str = 'pi',
                  script_path: str = None,
                  use_service: bool = False, service_file: str = '/tmp/rc_car_command',
-                 arduino_port: str = '/dev/ttyACM0', local_mode: bool = None):
+                 arduino_port: str = '/dev/ttyACM0', local_mode: bool = None,
+                 enable_monitor: bool = False):
         """
         Initialize interactive controller
         
@@ -59,6 +76,12 @@ class InteractiveRCCarControl:
         self.running = False
         self.old_settings = None
         self.local_controller = None
+        self.enable_monitor = enable_monitor
+        self.monitor = None
+        
+        # Initialize monitor if enabled
+        if enable_monitor and HAS_MONITOR:
+            self.monitor = MotorMonitor()
         
         # Auto-detect if running locally
         if local_mode is None:
@@ -138,16 +161,37 @@ class InteractiveRCCarControl:
     
     def send_command(self, command: str):
         """Send command to RC car"""
-        if self.is_local:
-            if self.use_service:
-                self._send_command_service_file(command)
-            else:
-                self._send_command_local(command)
+        # Log command to monitor if enabled
+        if self.monitor:
+            start_time = time.time()
+            try:
+                if self.is_local:
+                    if self.use_service:
+                        self._send_command_service_file(command)
+                    else:
+                        self._send_command_local(command)
+                else:
+                    if self.use_service:
+                        self._send_command_service(command)
+                    else:
+                        self._send_command_ssh(command)
+                response_time = time.time() - start_time
+                self.monitor.log_command(command, response_time=response_time, success=True)
+            except Exception as e:
+                response_time = time.time() - start_time
+                self.monitor.log_command(command, response_time=response_time, success=False, error=str(e))
+                raise
         else:
-            if self.use_service:
-                self._send_command_service(command)
+            if self.is_local:
+                if self.use_service:
+                    self._send_command_service_file(command)
+                else:
+                    self._send_command_local(command)
             else:
-                self._send_command_ssh(command)
+                if self.use_service:
+                    self._send_command_service(command)
+                else:
+                    self._send_command_ssh(command)
     
     def setup_terminal(self):
         """Setup terminal for single-character input"""
@@ -182,18 +226,129 @@ class InteractiveRCCarControl:
     
     def run(self):
         """Run interactive control loop"""
+        # Use keyboard library if available for proper key release detection
+        if HAS_KEYBOARD:
+            self._run_with_keyboard()
+        else:
+            self._run_with_terminal()
+    
+    def _run_with_keyboard(self):
+        """Run with keyboard library for proper key release detection"""
+        self.running = True
+        self.print_help()
+        print("\nPress and HOLD keys (release to stop drive):")
+        print("Note: Install 'keyboard' library for best experience (pip install keyboard)\n")
+        
+        # Track active drive command
+        active_drive = None
+        
+        # Key press handlers
+        def on_w_press(_):
+            nonlocal active_drive
+            if active_drive != 'w':
+                self.send_command('w')
+                active_drive = 'w'
+                print("→ Forward", end='\r', flush=True)
+        
+        def on_w_release(_):
+            nonlocal active_drive
+            if active_drive == 'w':
+                self.send_command(' ')  # Stop drive
+                active_drive = None
+                print("→ Stopped", end='\r', flush=True)
+        
+        def on_s_press(_):
+            nonlocal active_drive
+            if active_drive != 's':
+                self.send_command('s')
+                active_drive = 's'
+                print("→ Backward", end='\r', flush=True)
+        
+        def on_s_release(_):
+            nonlocal active_drive
+            if active_drive == 's':
+                self.send_command(' ')  # Stop drive
+                active_drive = None
+                print("→ Stopped", end='\r', flush=True)
+        
+        def on_a_press(_):
+            self.send_command('a')
+            print("→ Left", end='\r', flush=True)
+        
+        def on_d_press(_):
+            self.send_command('d')
+            print("→ Right", end='\r', flush=True)
+        
+        # Register keyboard hooks
+        keyboard.on_press_key('w', on_w_press)
+        keyboard.on_release_key('w', on_w_release)
+        keyboard.on_press_key('s', on_s_press)
+        keyboard.on_release_key('s', on_s_release)
+        keyboard.on_press_key('a', on_a_press)
+        keyboard.on_press_key('d', on_d_press)
+        
+        # Arrow keys
+        keyboard.on_press_key('up', on_w_press)
+        keyboard.on_release_key('up', on_w_release)
+        keyboard.on_press_key('down', on_s_press)
+        keyboard.on_release_key('down', on_s_release)
+        keyboard.on_press_key('left', on_a_press)
+        keyboard.on_press_key('right', on_d_press)
+        
+        def on_space_press(_):
+            nonlocal active_drive
+            if active_drive:
+                self.send_command(' ')
+                active_drive = None
+                print("→ Stop Drive", end='\r', flush=True)
+        
+        def on_c_press(_):
+            self.send_command('c')
+            print("→ Center Steering", end='\r', flush=True)
+        
+        def on_x_press(_):
+            nonlocal active_drive
+            if active_drive:
+                self.send_command(' ')
+                active_drive = None
+            self.send_command('x')
+            print("→ All Off", end='\r', flush=True)
+        
+        keyboard.on_press_key('space', on_space_press)
+        keyboard.on_press_key('c', on_c_press)
+        keyboard.on_press_key('x', on_x_press)
+        
+        try:
+            keyboard.wait('q')
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.running = False
+            if active_drive:
+                self.send_command(' ')
+            self.send_command('x')
+            if self.local_controller:
+                self.local_controller.disconnect()
+            if self.monitor:
+                print("\n" + self.monitor.get_summary())
+                self.monitor.end_session()
+            print("\nDisconnected. Car stopped.")
+    
+    def _run_with_terminal(self):
+        """Run with terminal input (fallback when keyboard library not available)"""
         self.running = True
         self.setup_terminal()
         
         try:
             self.print_help()
-            print("\nPress and HOLD keys for continuous control (Q to quit, H for help):")
-            print("Release key or press Space/C to stop\n")
+            print("\nPress keys for control (Q to quit, H for help):")
+            print("Note: Drive (W/S) is latched - press Space to stop")
+            print("Tip: Install 'keyboard' library for auto-stop on key release\n")
             
-            # Track active command for continuous control
-            active_command = None
-            last_command_time = 0
-            command_repeat_interval = 0.15  # Repeat every 150ms
+            # Track last drive command
+            last_drive_command = None
+            last_input_time = 0
+            auto_stop_timeout = 0.5  # Auto-stop after 500ms of no input (assume key released)
             
             while self.running:
                 current_time = time.time()
@@ -204,6 +359,7 @@ class InteractiveRCCarControl:
                 if select.select([sys.stdin], [], [], 0.05)[0]:
                     input_available = True
                     char = sys.stdin.read(1)
+                    last_input_time = current_time
                     
                     # Handle special characters
                     if ord(char) == 27:  # Escape sequence (arrow keys)
@@ -226,65 +382,71 @@ class InteractiveRCCarControl:
                 if input_available and char:
                     char_lower = char.lower()
                     
-                    # Process command
                     if char_lower == 'q':
                         print("\n\nQuitting...")
+                        if last_drive_command:
+                            self.send_command(' ')
                         break
                     elif char_lower == 'h':
                         print("\n")
                         self.print_help()
-                        print("\nPress and HOLD keys for continuous control (Q to quit, H for help):")
-                        active_command = None
+                        print("\nPress keys for control (Q to quit, H for help):")
+                        print("Note: Drive (W/S) is latched - press Space to stop\n")
+                        last_drive_command = None
                         continue
-                    elif char_lower in ['w', 's', 'a', 'd']:
-                        # Set active command for continuous control
-                        active_command = char_lower
-                        last_command_time = current_time
-                        self.send_command(char_lower)
-                        if char_lower == 'w':
-                            print("→ Forward (HOLD)", end='\r', flush=True)
-                        elif char_lower == 's':
-                            print("→ Backward (HOLD)", end='\r', flush=True)
-                        elif char_lower == 'a':
-                            print("→ Left (HOLD)", end='\r', flush=True)
-                        elif char_lower == 'd':
-                            print("→ Right (HOLD)", end='\r', flush=True)
+                    elif char_lower == 'w':
+                        if last_drive_command != 'w':
+                            self.send_command('w')
+                            last_drive_command = 'w'
+                            print("→ Forward (press Space to stop)", end='\r', flush=True)
+                    elif char_lower == 's':
+                        if last_drive_command != 's':
+                            self.send_command('s')
+                            last_drive_command = 's'
+                            print("→ Backward (press Space to stop)", end='\r', flush=True)
+                    elif char_lower == 'a':
+                        self.send_command('a')
+                        print("→ Left", end='\r', flush=True)
+                    elif char_lower == 'd':
+                        self.send_command('d')
+                        print("→ Right", end='\r', flush=True)
                     elif char == ' ':
-                        # Stop drive
-                        if active_command in ['w', 's']:
-                            active_command = None
-                        self.send_command(' ')
-                        print("→ Stop Drive", end='\r', flush=True)
+                        if last_drive_command:
+                            self.send_command(' ')
+                            last_drive_command = None
+                            print("→ Stop Drive", end='\r', flush=True)
                     elif char_lower == 'c':
-                        # Center steering
-                        if active_command in ['a', 'd']:
-                            active_command = None
                         self.send_command('c')
                         print("→ Center Steering", end='\r', flush=True)
                     elif char_lower == 'x':
-                        # All off
-                        active_command = None
+                        if last_drive_command:
+                            self.send_command(' ')
+                            last_drive_command = None
                         self.send_command('x')
                         print("→ All Off", end='\r', flush=True)
-                    else:
-                        # Unknown key - clear active command
-                        active_command = None
                 
-                # Continuously send active command
-                if active_command and (current_time - last_command_time >= command_repeat_interval):
-                    self.send_command(active_command)
-                    last_command_time = current_time
+                # Auto-stop drive if no input detected (key likely released)
+                if last_drive_command and (current_time - last_input_time >= auto_stop_timeout):
+                    self.send_command(' ')
+                    last_drive_command = None
+                    print("→ Auto-stopped", end='\r', flush=True)
+                    last_input_time = current_time  # Reset to prevent repeated stops
         
         except KeyboardInterrupt:
             print("\n\nInterrupted. Stopping...")
         finally:
             # Ensure we stop the car when exiting
             try:
+                if last_drive_command:
+                    self.send_command(' ')
                 self.send_command('x')
             except:
                 pass
             if self.local_controller:
                 self.local_controller.disconnect()
+            if self.monitor:
+                print("\n" + self.monitor.get_summary())
+                self.monitor.end_session()
             self.restore_terminal()
             print("\nDisconnected. Car stopped.")
 
@@ -307,6 +469,8 @@ def main():
                        help='Force local mode (skip SSH)')
     parser.add_argument('--remote', action='store_true',
                        help='Force remote mode (use SSH)')
+    parser.add_argument('--monitor', '-m', action='store_true',
+                       help='Enable motor monitoring and benchmarking')
     
     args = parser.parse_args()
     
@@ -323,7 +487,8 @@ def main():
         use_service=args.service,
         service_file=args.service_file,
         arduino_port=args.arduino_port,
-        local_mode=local_mode
+        local_mode=local_mode,
+        enable_monitor=args.monitor
     )
     
     controller.run()

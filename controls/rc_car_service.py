@@ -3,7 +3,6 @@ RC Car Service - Runs on Raspberry Pi as a background service
 Listens for commands via file or network socket
 """
 
-import serial
 import time
 import os
 import sys
@@ -11,6 +10,13 @@ import argparse
 from pathlib import Path
 import socket
 import threading
+
+try:
+    import serial  # type: ignore
+    HAS_SERIAL = True
+except ImportError:
+    HAS_SERIAL = False
+    serial = None
 
 
 class RCCarService:
