@@ -206,38 +206,66 @@ class InteractiveRCCarControl:
     def print_help(self):
         """Print help message"""
         help_text = """
-╔══════════════════════════════════════════════════════════════╗
-║          Interactive RC Car Control                          ║
-╠══════════════════════════════════════════════════════════════╣
-║  Controls:                                                    ║
-║    W / ↑    - Forward                                        ║
-║    S / ↓    - Backward                                       ║
-║    A / ←    - Steer Left                                     ║
-║    D / →    - Steer Right                                    ║
-║    Space    - Stop Drive                                     ║
-║    C        - Center Steering                                ║
-║    X        - All Off                                        ║
-║                                                              ║
-║    H        - Show this help                                ║
-║    Q        - Quit                                           ║
-╚══════════════════════════════════════════════════════════════╝
+==============================================================
+          Interactive RC Car Control                          
+==============================================================
+  Controls:                                                    
+    W / Up Arrow    - Forward                                
+    S / Down Arrow  - Backward                               
+    A / Left Arrow  - Steer Left                             
+    D / Right Arrow - Steer Right                            
+    Space           - Stop Drive                             
+    C               - Center Steering                        
+    X               - All Off                                
+                                                                
+    H               - Show this help                         
+    Q               - Quit                                   
+==============================================================
 """
         print(help_text)
     
     def run(self):
         """Run interactive control loop"""
-        # Use keyboard library if available for proper key release detection
-        if HAS_KEYBOARD:
-            self._run_with_keyboard()
-        else:
-            self._run_with_terminal()
+        # On Linux/Raspberry Pi, keyboard library requires root, so prefer terminal mode
+        # Terminal mode works well without root and handles arrow keys properly
+        # Only use keyboard library if it's available AND we have root OR we're on macOS/Windows
+        try:
+            is_root = os.geteuid() == 0 if hasattr(os, 'geteuid') else False
+            is_linux = sys.platform == 'linux'
+            use_keyboard = HAS_KEYBOARD and (not is_linux or is_root)
+        except:
+            use_keyboard = False
+        
+        if use_keyboard:
+            try:
+                self._run_with_keyboard()
+                return
+            except Exception as e:
+                print(f"Keyboard library failed: {e}")
+                print("Falling back to terminal mode...\n")
+        
+        # Use terminal mode (works on all platforms, no root required)
+        self._run_with_terminal()
     
     def _run_with_keyboard(self):
         """Run with keyboard library for proper key release detection"""
         self.running = True
+        
+        # Check if we have proper permissions (keyboard library needs root on Linux)
+        try:
+            # Test if we can hook a key
+            test_hook = keyboard.on_press_key('q', lambda _: None)
+            keyboard.unhook(test_hook)
+        except Exception as e:
+            print(f"Warning: Keyboard library may need root privileges. Error: {e}")
+            print("Falling back to terminal mode...\n")
+            self.restore_terminal()
+            self._run_with_terminal()
+            return
+        
         self.print_help()
         print("\nPress and HOLD keys (release to stop drive):")
-        print("Note: Install 'keyboard' library for best experience (pip install keyboard)\n")
+        print("Note: Keyboard library is active for auto-stop\n")
         
         # Track active drive command
         active_drive = None
@@ -248,36 +276,36 @@ class InteractiveRCCarControl:
             if active_drive != 'w':
                 self.send_command('w')
                 active_drive = 'w'
-                print("→ Forward", end='\r', flush=True)
+                print("Forward", end='\r', flush=True)
         
         def on_w_release(_):
             nonlocal active_drive
             if active_drive == 'w':
                 self.send_command(' ')  # Stop drive
                 active_drive = None
-                print("→ Stopped", end='\r', flush=True)
+                print("Stopped", end='\r', flush=True)
         
         def on_s_press(_):
             nonlocal active_drive
             if active_drive != 's':
                 self.send_command('s')
                 active_drive = 's'
-                print("→ Backward", end='\r', flush=True)
+                print("Backward", end='\r', flush=True)
         
         def on_s_release(_):
             nonlocal active_drive
             if active_drive == 's':
                 self.send_command(' ')  # Stop drive
                 active_drive = None
-                print("→ Stopped", end='\r', flush=True)
+                print("Stopped", end='\r', flush=True)
         
         def on_a_press(_):
             self.send_command('a')
-            print("→ Left", end='\r', flush=True)
+            print("Left", end='\r', flush=True)
         
         def on_d_press(_):
             self.send_command('d')
-            print("→ Right", end='\r', flush=True)
+            print("Right", end='\r', flush=True)
         
         # Register keyboard hooks
         keyboard.on_press_key('w', on_w_press)
@@ -300,11 +328,11 @@ class InteractiveRCCarControl:
             if active_drive:
                 self.send_command(' ')
                 active_drive = None
-                print("→ Stop Drive", end='\r', flush=True)
+                print("Stop Drive", end='\r', flush=True)
         
         def on_c_press(_):
             self.send_command('c')
-            print("→ Center Steering", end='\r', flush=True)
+            print("Center Steering", end='\r', flush=True)
         
         def on_x_press(_):
             nonlocal active_drive
@@ -312,18 +340,29 @@ class InteractiveRCCarControl:
                 self.send_command(' ')
                 active_drive = None
             self.send_command('x')
-            print("→ All Off", end='\r', flush=True)
+            print("All Off", end='\r', flush=True)
         
         keyboard.on_press_key('space', on_space_press)
         keyboard.on_press_key('c', on_c_press)
         keyboard.on_press_key('x', on_x_press)
         
         try:
+            print("Press 'Q' to quit\n")
             keyboard.wait('q')
         except KeyboardInterrupt:
             pass
+        except Exception as e:
+            print(f"\nError with keyboard library: {e}")
+            print("Falling back to terminal mode...")
+            keyboard.unhook_all()
+            self._run_with_terminal()
+            return
         finally:
             self.running = False
+            try:
+                keyboard.unhook_all()
+            except:
+                pass
             if active_drive:
                 self.send_command(' ')
             self.send_command('x')
@@ -343,12 +382,12 @@ class InteractiveRCCarControl:
             self.print_help()
             print("\nPress keys for control (Q to quit, H for help):")
             print("Note: Drive (W/S) is latched - press Space to stop")
-            print("Tip: Install 'keyboard' library for auto-stop on key release\n")
+            print("Tip: Press and hold W/S, then release and press Space to stop\n")
             
             # Track last drive command
             last_drive_command = None
             last_input_time = 0
-            auto_stop_timeout = 0.5  # Auto-stop after 500ms of no input (assume key released)
+            auto_stop_timeout = 2.0  # Auto-stop after 2 seconds of no input (increased for better control)
             
             while self.running:
                 current_time = time.time()
@@ -398,38 +437,42 @@ class InteractiveRCCarControl:
                         if last_drive_command != 'w':
                             self.send_command('w')
                             last_drive_command = 'w'
-                            print("→ Forward (press Space to stop)", end='\r', flush=True)
+                            print("Forward (press Space to stop)", end='\r', flush=True)
                     elif char_lower == 's':
                         if last_drive_command != 's':
                             self.send_command('s')
                             last_drive_command = 's'
-                            print("→ Backward (press Space to stop)", end='\r', flush=True)
+                            print("Backward (press Space to stop)", end='\r', flush=True)
                     elif char_lower == 'a':
                         self.send_command('a')
-                        print("→ Left", end='\r', flush=True)
+                        print("Left", end='\r', flush=True)
                     elif char_lower == 'd':
                         self.send_command('d')
-                        print("→ Right", end='\r', flush=True)
+                        print("Right", end='\r', flush=True)
                     elif char == ' ':
                         if last_drive_command:
                             self.send_command(' ')
                             last_drive_command = None
-                            print("→ Stop Drive", end='\r', flush=True)
+                            print("Stop Drive", end='\r', flush=True)
                     elif char_lower == 'c':
                         self.send_command('c')
-                        print("→ Center Steering", end='\r', flush=True)
+                        print("Center Steering", end='\r', flush=True)
                     elif char_lower == 'x':
                         if last_drive_command:
                             self.send_command(' ')
                             last_drive_command = None
                         self.send_command('x')
-                        print("→ All Off", end='\r', flush=True)
+                        print("All Off", end='\r', flush=True)
                 
-                # Auto-stop drive if no input detected (key likely released)
+                # Auto-stop drive if no input detected for a while (safety feature)
+                # Note: This is a safety timeout, not an auto-stop on key release
+                # Users should press Space to stop
                 if last_drive_command and (current_time - last_input_time >= auto_stop_timeout):
                     self.send_command(' ')
                     last_drive_command = None
-                    print("→ Auto-stopped", end='\r', flush=True)
+                    print("Auto-stopped (safety timeout - press Space to stop)", end='\r', flush=True)
+                    time.sleep(0.1)  # Brief pause before clearing message
+                    print("Ready - press keys for control", end='\r', flush=True)
                     last_input_time = current_time  # Reset to prevent repeated stops
         
         except KeyboardInterrupt:

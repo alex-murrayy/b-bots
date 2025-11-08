@@ -5,6 +5,7 @@ This document provides an overview of all documentation files in the project.
 ## Main Documentation
 
 ### Root Level
+
 - **README.md** - Main project overview and quick start guide
   - Complete project overview
   - Quick start instructions
@@ -15,6 +16,7 @@ This document provides an overview of all documentation files in the project.
 ## Component Documentation
 
 ### Controls (`controls/`)
+
 - **README.md** - Complete controls system documentation
   - Quick start
   - Hardware setup
@@ -25,6 +27,7 @@ This document provides an overview of all documentation files in the project.
   - Troubleshooting
 
 ### App (`app/`)
+
 - **README.md** - Complete order app documentation
   - Architecture overview
   - Quick start
@@ -35,6 +38,7 @@ This document provides an overview of all documentation files in the project.
   - Troubleshooting
 
 ### Navigation (`navigation/`)
+
 - **README.md** - Complete navigation system documentation
   - Overview
   - Quick start
@@ -65,10 +69,12 @@ This document provides an overview of all documentation files in the project.
 ## Quick Reference
 
 ### Getting Started
+
 1. Read **README.md** (root) for project overview
 2. Read component **README.md** files for specific setup
 
 ### Component-Specific
+
 - **controls/README.md** - RC car control setup and usage
 - **app/README.md** - Order app setup and usage
 - **navigation/README.md** - Navigation system setup and usage
@@ -76,6 +82,7 @@ This document provides an overview of all documentation files in the project.
 ## Documentation Cleanup
 
 The following redundant files were removed:
+
 - `controls/README_SETUP.md` (merged into controls/README.md)
 - `controls/QUICK_START.md` (merged into controls/README.md)
 - `controls/CONTROLS_ARCHITECTURE.md` (merged into controls/README.md)
