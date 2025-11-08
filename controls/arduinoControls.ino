@@ -1,26 +1,23 @@
 // ===== YOUR PIN MAP =====
+
 const int PIN_FWD   = 5;  // Orange (Fwd)
 const int PIN_REV   = 7;  // Grey BM (Rev)
 const int PIN_LEFT  = 8;  // Purple FM (Left)
 const int PIN_RIGHT = 6;  // Grey FM (Right)
 
-
 // ===== BEHAVIOR SWITCHES =====
+
 bool ACTIVE_LOW = false;          // set true if ON = LOW on your board
 bool USE_BRAKE_BEFORE_REV = false; // set true only if reverse needs a brake pulse
-
 
 // Steering tap length (ms)
 int steerPulse = 200;
 
-
 // ---------------- Internals ----------------
 bool testMode = false;
 
-
 int ON()  { return ACTIVE_LOW ? LOW  : HIGH; }
 int OFF() { return ACTIVE_LOW ? HIGH : LOW; }
-
 
 void allOff() {
   digitalWrite(PIN_FWD,   OFF());
@@ -29,12 +26,10 @@ void allOff() {
   digitalWrite(PIN_RIGHT, OFF());
 }
 
-
 void neutralDrive() {
   digitalWrite(PIN_FWD, OFF());
   digitalWrite(PIN_REV, OFF());
 }
-
 
 void steerLeftTap() {
   digitalWrite(PIN_LEFT, ON());
@@ -42,20 +37,17 @@ void steerLeftTap() {
   digitalWrite(PIN_LEFT, OFF());
 }
 
-
 void steerRightTap() {
   digitalWrite(PIN_RIGHT, ON());
   delay(steerPulse);
   digitalWrite(PIN_RIGHT, OFF());
 }
 
-
 void engageForward() {
   neutralDrive();
   delay(100);
   digitalWrite(PIN_FWD, ON());
 }
-
 
 void engageReverse() {
   if (USE_BRAKE_BEFORE_REV) {
@@ -67,13 +59,11 @@ void engageReverse() {
   digitalWrite(PIN_REV, ON());
 }
 
-
 void printHelp() {
   Serial.println(F("Normal: W=Fwd  S=Rev  A=LeftTap  D=RightTap  Space=stop  C=center  X=all stop"));
   Serial.println(F("Test mode: press 't' -> 1=FWD  2=REV  3=LEFT  4=RIGHT  x=all off  q=quit"));
   Serial.println(F("Hints: set ACTIVE_LOW=true if pins act inverted; enable USE_BRAKE_BEFORE_REV if S only works after a brake blip."));
 }
-
 
 void setup() {
   pinMode(PIN_FWD, OUTPUT);
@@ -82,19 +72,15 @@ void setup() {
   pinMode(PIN_RIGHT, OUTPUT);
   allOff();
 
-
-  Serial.begin(115200);
-  // Note: while(!Serial) can block forever if no serial monitor is open
-  // This causes issues when Python connects - the Arduino waits forever
-  // For Raspberry Pi/Python control, we skip this wait
-  // Uncomment only if you need to wait for Serial Monitor during development
+  Serial.begin(9600);
+  // Note: while(!Serial) is NOT used - this allows Python/SSH connections
+  // without needing Serial Monitor open. Only uncomment for debugging.
   // while (!Serial) { ; }
   delay(500);  // Give serial time to stabilize
   Serial.println(F("WASD + Test Mode Ready"));
   printHelp();
   Serial.flush();  // Ensure messages are sent
 }
-
 
 void handleTestMode(char c) {
   switch (c) {
@@ -108,15 +94,12 @@ void handleTestMode(char c) {
   }
 }
 
-
 void loop() {
   if (!Serial.available()) return;
   char c = Serial.read();
 
-
   if (c=='t' || c=='T') { testMode = true; Serial.println("ENTER TEST MODE"); return; }
   if (testMode) { handleTestMode(c); return; }
-
 
   // Normal mode:
   // Drive is latched, steering is momentary (auto-center)
@@ -126,12 +109,10 @@ void loop() {
       Serial.println("FWD");
       break;
 
-
     case 's': case 'S':
       engageReverse();
       Serial.println("REV");
       break;
-
 
     case 'a': case 'A':
       // center first
@@ -141,7 +122,6 @@ void loop() {
       Serial.println("LEFT TAP");
       break;
 
-
     case 'd': case 'D':
       digitalWrite(PIN_LEFT, OFF());
       digitalWrite(PIN_RIGHT, OFF());
@@ -149,12 +129,10 @@ void loop() {
       Serial.println("RIGHT TAP");
       break;
 
-
     case ' ': // stop drive
       neutralDrive();
       Serial.println("NEUTRAL DRIVE");
       break;
-
 
     case 'c': case 'C': // center steering
       digitalWrite(PIN_LEFT, OFF());
@@ -162,12 +140,10 @@ void loop() {
       Serial.println("CENTER");
       break;
 
-
     case 'x': case 'X': // everything off
       allOff();
       Serial.println("ALL OFF");
       break;
-
 
     default: break;
   }

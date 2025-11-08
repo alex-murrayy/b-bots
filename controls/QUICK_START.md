@@ -207,6 +207,7 @@ Once controls are working:
 ## Need Help?
 
 - Check `controls/README.md` for detailed documentation
-- Check `controls/ERRORS_FIXED.md` for known issues
-- Run test script: `python3 controls/test_arduino.py`
-- Check Arduino serial monitor for debug output
+- Check `controls/TROUBLESHOOTING.md` for common issues
+- Check `controls/RUN_ON_PI.md` for SSH setup
+- Run test script: `python3 controls/test_arduino.py --debug`
+- Check Arduino serial monitor for debug output (9600 baud)

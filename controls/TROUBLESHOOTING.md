@@ -9,10 +9,11 @@ If the Arduino LED is **NOT flashing** when you send commands, this indicates th
 ### Step 1: Verify Sketch is Uploaded and Running
 
 ```bash
-# Run verification script
-python3 controls/verify_sketch.py
+# Test Arduino connection and commands
+python3 controls/test_arduino.py --debug
 
 # This will check:
+# - Connection to Arduino
 # - Startup messages from Arduino
 # - Command responses
 # - Communication status
@@ -20,17 +21,17 @@ python3 controls/verify_sketch.py
 
 **Expected output:**
 ```
-✓ Startup message found - Sketch is running!
-✓ Command response received - Communication working!
+Connected to Arduino on /dev/ttyACM0
+SUCCESS: Connected to Arduino
+Test 1: Forward (W) - Response: FWD
+...
 ```
 
-**If you see:**
-```
-✗ No startup messages received
-✗ No response received
-```
-
-**Then the sketch is likely not running!**
+**If you see connection errors:**
+- Sketch may not be uploaded
+- Arduino may not be powered
+- Port may be wrong
+- Serial Monitor may be open (close it!)
 
 ### Step 2: Check Arduino Serial Monitor
 
@@ -38,7 +39,7 @@ python3 controls/verify_sketch.py
 2. **Select your Arduino board** (Tools -> Board -> Arduino Uno R4 WiFi)
 3. **Select the port** (Tools -> Port -> /dev/ttyACM0)
 4. **Open Serial Monitor** (Tools -> Serial Monitor)
-5. **Set baud rate to 115200** (bottom right of Serial Monitor)
+5. **Set baud rate to 9600** (bottom right of Serial Monitor)
 6. **Check for messages:**
    - Should see: "WASD + Test Mode Ready"
    - Should see help text
@@ -59,7 +60,7 @@ python3 controls/verify_sketch.py
 
 ### Step 4: Test Manually in Serial Monitor
 
-1. **Open Serial Monitor** (115200 baud)
+1. **Open Serial Monitor** (9600 baud)
 2. **Type 'w' and press Enter**
 3. **You should see:**
    - Arduino sends: "FWD"
@@ -77,7 +78,7 @@ python3 controls/verify_sketch.py
 1. **Upload a simple test sketch:**
    ```cpp
    void setup() {
-     Serial.begin(115200);
+     Serial.begin(9600);
      pinMode(13, OUTPUT);
    }
    
@@ -97,15 +98,16 @@ python3 controls/verify_sketch.py
 ### Issue 1: No Startup Messages
 
 **Symptoms:**
-- `verify_sketch.py` shows no startup messages
+- `test_arduino.py` shows no startup messages
 - Serial Monitor shows nothing
 - No responses to commands
 
 **Solutions:**
 1. **Re-upload the sketch**
-2. **Check baud rate matches** (should be 115200)
-3. **Check Serial.begin(115200) is in setup()**
+2. **Check baud rate matches** (should be 9600)
+3. **Check Serial.begin(9600) is in setup()**
 4. **Verify sketch compiles without errors**
+5. **Close Serial Monitor** in Arduino IDE (only one program can use serial)
 
 ### Issue 2: Commands Sent But No Response
 
@@ -129,9 +131,9 @@ python3 controls/verify_sketch.py
 - Timeout errors
 
 **Solutions:**
-1. **Verify baud rate in sketch:** `Serial.begin(115200);`
-2. **Set Serial Monitor to 115200**
-3. **Use same baud rate in Python:** `baudrate=115200`
+1. **Verify baud rate in sketch:** `Serial.begin(9600);`
+2. **Set Serial Monitor to 9600**
+3. **Use same baud rate in Python:** `baudrate=9600`
 
 ### Issue 4: Arduino Resets on Connection
 
@@ -169,14 +171,11 @@ groups
 ### Check Arduino Communication
 
 ```bash
-# Verify sketch is running
-python3 controls/verify_sketch.py
-
-# Check Arduino connection
-python3 controls/check_arduino.py
-
-# Test with debug output
+# Test Arduino connection and commands
 python3 controls/test_arduino.py --debug
+
+# Test with specific port
+python3 controls/test_arduino.py --port /dev/ttyACM0 --debug
 ```
 
 ### Check Serial Port
@@ -192,14 +191,16 @@ ls -l /dev/ttyACM*
 dmesg | grep -i usb | tail -10
 ```
 
-### Monitor Serial Communication
+### Test Single Command
 
 ```bash
-# Monitor all serial data
-python3 controls/debug_serial.py --port /dev/ttyACM0
+# Send a single command and see response
+python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 
-# In another terminal, send commands:
-python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 w
+# This will show:
+# - Connection status
+# - Command sent
+# - Response received
 ```
 
 ## Step-by-Step Debugging Workflow
@@ -207,18 +208,19 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 w
 ### Workflow 1: Verify Sketch is Running
 
 ```bash
-# 1. Run verification
-python3 controls/verify_sketch.py
+# 1. Test Arduino connection
+python3 controls/test_arduino.py --debug
 
-# 2. If no startup messages:
-#    - Open Arduino IDE
-#    - Re-upload sketch
-#    - Check Serial Monitor
-#    - Verify baud rate
+# 2. If no connection:
+#    - Check Arduino is powered on
+#    - Check USB cable is connected
+#    - Verify port: python3 controls/arduino_wasd_controller.py --list-ports
+#    - Close Serial Monitor in Arduino IDE
 
-# 3. If startup messages but no responses:
-#    - Check command handlers in sketch
-#    - Test commands manually in Serial Monitor
+# 3. If connection but no responses:
+#    - Open Arduino IDE Serial Monitor (9600 baud)
+#    - Test commands manually (type 'w', see 'FWD')
+#    - If Serial Monitor works but Python doesn't, check timing
 #    - Verify pin connections
 ```
 
@@ -236,15 +238,16 @@ python3 controls/verify_sketch.py
 ### Workflow 3: Test Communication
 
 ```bash
-# Terminal 1: Monitor serial
-python3 controls/debug_serial.py --port /dev/ttyACM0
+# Test all commands
+python3 controls/test_arduino.py --debug
 
-# Terminal 2: Send commands
+# Test single command with detailed output
 python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 
 # Check if:
-# - Commands appear in monitor
-# - Responses appear in monitor
+# - Connection successful
+# - Commands sent successfully
+# - Responses received
 # - Timing is correct
 ```
 
@@ -297,7 +300,7 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 # 4. Select port: /dev/ttyACM0
 # 5. Click Upload
 # 6. Wait for "Done uploading"
-# 7. Open Serial Monitor (115200 baud)
+# 7. Open Serial Monitor (9600 baud)
 # 8. Verify startup messages
 ```
 
@@ -305,16 +308,16 @@ python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 
 ```python
 # In arduinoControls.ino, verify:
-Serial.begin(115200);  // Must be 115200
+Serial.begin(9600);  // Must be 9600
 
 # In Python, verify:
-baudrate=115200  # Must match
+baudrate=9600  # Must match
 ```
 
 ### Fix 3: Test in Serial Monitor
 
 1. Open Arduino IDE Serial Monitor
-2. Set baud rate to 115200
+2. Set baud rate to 9600
 3. Type 'w' and press Enter
 4. Should see "FWD" response
 5. If you see this, communication works
@@ -324,22 +327,25 @@ baudrate=115200  # Must match
 
 If still having issues:
 
-1. **Run verification:**
+1. **Run test:**
    ```bash
-   python3 controls/verify_sketch.py > verify.log 2>&1
+   python3 controls/test_arduino.py --debug > test.log 2>&1
    ```
 
 2. **Check Serial Monitor output:**
+   - Open Arduino IDE Serial Monitor (9600 baud)
    - Copy all messages
    - Note any errors
+   - Test commands manually (type 'w', see 'FWD')
 
 3. **Check Arduino IDE:**
    - Verify sketch compiles
    - Check for errors
    - Verify upload successful
+   - Verify `Serial.begin(9600)` is in setup()
 
 4. **Share information:**
-   - Output of `verify_sketch.py`
+   - Output of `test_arduino.py --debug`
    - Serial Monitor output
    - Arduino IDE messages
    - Error messages

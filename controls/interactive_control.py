@@ -45,7 +45,7 @@ class InteractiveRCCarControl:
     def __init__(self, pi_host: str = None, pi_user: str = 'pi',
                  script_path: str = None,
                  use_service: bool = False, service_file: str = '/tmp/rc_car_command',
-                 arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 115200, local_mode: bool = None,
+                 arduino_port: str = '/dev/ttyACM0', arduino_baudrate: int = 9600, local_mode: bool = None,
                  enable_monitor: bool = False):
         """
         Initialize interactive controller
@@ -57,7 +57,7 @@ class InteractiveRCCarControl:
             use_service: Use file-based service for faster response
             service_file: Command file path for service mode
             arduino_port: Arduino port for local mode
-            arduino_baudrate: Arduino baud rate (default: 115200)
+            arduino_baudrate: Arduino baud rate (default: 9600)
             local_mode: Force local mode (None = auto-detect)
         """
         self.pi_host = pi_host
@@ -549,8 +549,8 @@ def main():
                        help='Command file path for service mode')
     parser.add_argument('--arduino-port', '-p', default='/dev/ttyACM0',
                        help='Arduino port for local mode (default: /dev/ttyACM0)')
-    parser.add_argument('--arduino-baudrate', '-b', type=int, default=115200,
-                       help='Arduino baud rate (default: 115200)')
+    parser.add_argument('--arduino-baudrate', '-b', type=int, default=9600,
+                       help='Arduino baud rate (default: 9600)')
     parser.add_argument('--local', action='store_true',
                        help='Force local mode (skip SSH)')
     parser.add_argument('--remote', action='store_true',

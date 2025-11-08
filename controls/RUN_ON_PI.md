@@ -12,8 +12,8 @@
 2. Open `controls/arduinoControls.ino`
 3. **IMPORTANT:** Make sure `while(!Serial)` is commented out:
    ```cpp
-   Serial.begin(115200);
-   // while (!Serial) { ; }  // ← This line should be commented out!
+   Serial.begin(9600);
+   // while (!Serial) is NOT used - allows Python/SSH connections
    delay(500);
    Serial.println(F("WASD + Test Mode Ready"));
    ```
@@ -21,7 +21,7 @@
 5. Select port: Your Arduino port
 6. Click **Upload**
 7. Wait for "Done uploading"
-8. **Open Serial Monitor** (115200 baud)
+8. **Open Serial Monitor** (9600 baud)
 9. **Verify you see:** "WASD + Test Mode Ready"
 10. **Type 'w' and press Enter**
 11. **You should see:** "FWD"
@@ -34,9 +34,6 @@
 ```bash
 # Copy updated files to Pi
 scp controls/arduino_wasd_controller.py pi@raspberrypi.local:~/b-bots/controls/
-scp controls/verify_sketch.py pi@raspberrypi.local:~/b-bots/controls/
-scp controls/test_communication.py pi@raspberrypi.local:~/b-bots/controls/
-scp controls/debug_serial.py pi@raspberrypi.local:~/b-bots/controls/
 scp controls/test_arduino.py pi@raspberrypi.local:~/b-bots/controls/
 scp controls/interactive_control.py pi@raspberrypi.local:~/b-bots/controls/
 ```
@@ -54,52 +51,32 @@ ssh pi@raspberrypi.local
 cd ~/b-bots
 ```
 
-## Step 4: Verify Arduino Sketch is Running
+## Step 4: Test Arduino Connection
 
 ```bash
-python3 controls/verify_sketch.py
+python3 controls/test_arduino.py --debug
 ```
 
 **Expected output:**
 
 ```
-✓ Startup message found - Sketch is running!
-✓ Command response received - Communication working!
+Connected to Arduino on /dev/ttyACM0
+SUCCESS: Connected to Arduino
+Test 1: Forward (W) - Response: FWD
+Test 2: Stop (Space) - Response: NEUTRAL DRIVE
+...
+All tests completed!
 ```
 
-**If you see:**
-
-```
-✗ No startup messages received
-```
-
-**Then:**
+**If you see connection errors:**
 
 1. Make sure Serial Monitor in Arduino IDE is closed
 2. Re-upload the sketch
 3. Verify sketch has `while(!Serial)` commented out
-4. Try again
+4. Check port: `python3 controls/arduino_wasd_controller.py --list-ports`
+5. Try again
 
-## Step 5: Test Communication
-
-```bash
-python3 controls/test_communication.py
-```
-
-**Expected output:**
-
-```
-✓ ALL TESTS PASSED - Arduino is working correctly!
-```
-
-**This tests:**
-
-- Startup messages
-- All commands (w, s, a, d, space, c, x)
-- Command responses
-- Communication timing
-
-## Step 6: Run Interactive Control
+## Step 5: Run Interactive Control
 
 ```bash
 python3 controls/interactive_control.py
@@ -148,7 +125,7 @@ newgrp dialout
 python3 controls/arduino_wasd_controller.py --list-ports
 
 # Try different port
-python3 controls/verify_sketch.py --port /dev/ttyUSB0
+python3 controls/test_arduino.py --port /dev/ttyUSB0 --debug
 ```
 
 ### Issue: "Commands sent but no response"
@@ -163,37 +140,15 @@ python3 controls/verify_sketch.py --port /dev/ttyUSB0
 ## Quick Test Sequence
 
 ```bash
-# 1. Verify sketch
-python3 controls/verify_sketch.py
+# 1. Test Arduino connection
+python3 controls/test_arduino.py --debug
 
-# 2. Test communication
-python3 controls/test_communication.py
-
-# 3. Test single command
+# 2. Test single command
 python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
 
-# 4. Run interactive control
+# 3. Run interactive control
 python3 controls/interactive_control.py
 ```
-
-## Monitoring Serial Communication
-
-**Terminal 1:**
-
-```bash
-python3 controls/debug_serial.py --port /dev/ttyACM0
-```
-
-**Terminal 2 (new SSH session):**
-
-```bash
-python3 controls/arduino_wasd_controller.py --port /dev/ttyACM0 --debug w
-```
-
-**You should see in Terminal 1:**
-
-- Startup messages
-- "FWD" response when command is sent
 
 ## Expected Results
 
