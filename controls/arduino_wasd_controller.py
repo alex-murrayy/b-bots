@@ -14,30 +14,68 @@ from typing import Optional
 class ArduinoWASDController:
     """Controller for Arduino using WASD command protocol"""
     
-    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 9600):
+    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 9600, debug: bool = False):
         """
         Initialize Arduino Controller
         
         Args:
             port: Serial port (typically /dev/ttyACM0 or /dev/ttyUSB0 on Raspberry Pi)
             baudrate: Serial baud rate (default: 9600 to match Arduino sketch)
+            debug: Enable debug output
         """
         self.port = port
         self.baudrate = baudrate
         self.serial: Optional[serial.Serial] = None
         self.is_connected = False
+        self.debug = debug
         
-    def connect(self):
+    def connect(self, debug: bool = False):
         """Establish serial connection to Arduino"""
         try:
-            self.serial = serial.Serial(self.port, self.baudrate, timeout=1)
-            time.sleep(2)  # Wait for Arduino to initialize
+            if debug:
+                print(f"[DEBUG] Attempting to connect to {self.port} at {self.baudrate} baud")
+            
+            self.serial = serial.Serial(
+                self.port, 
+                self.baudrate, 
+                timeout=1,
+                write_timeout=1,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE
+            )
+            
+            if debug:
+                print(f"[DEBUG] Serial port opened: {self.serial.is_open}")
+                print(f"[DEBUG] Port settings: {self.serial}")
+            
+            # Wait for Arduino to initialize (Arduino resets on serial connection)
+            time.sleep(2)
+            
+            # Clear any startup messages from Arduino
+            time.sleep(0.5)
+            if self.serial.in_waiting > 0:
+                startup_data = self.serial.read(self.serial.in_waiting)
+                if debug:
+                    try:
+                        startup_msg = startup_data.decode('utf-8', errors='ignore')
+                        print(f"[DEBUG] Arduino startup message: {startup_msg}")
+                    except:
+                        print(f"[DEBUG] Arduino startup data (raw): {startup_data}")
+            
             self.is_connected = True
             print(f"Connected to Arduino on {self.port}")
             return True
         except serial.SerialException as e:
             print(f"Error connecting to {self.port}: {e}")
             print(f"Available ports: {self._list_ports()}")
+            self.is_connected = False
+            return False
+        except Exception as e:
+            print(f"Unexpected error connecting: {e}")
+            if debug:
+                import traceback
+                traceback.print_exc()
             self.is_connected = False
             return False
     
@@ -54,12 +92,13 @@ class ArduinoWASDController:
         ports = serial.tools.list_ports.comports()
         return [port.device for port in ports]
     
-    def _send_command(self, command: str):
+    def _send_command(self, command: str, debug: bool = False):
         """Send command to Arduino via serial"""
         if not self.is_connected or not self.serial:
             raise RuntimeError("Not connected to Arduino. Call connect() first.")
         
         # Ensure command is a single character (Arduino expects single char)
+        original_command = command
         if len(command) > 1:
             # For multi-char commands like 'space', convert to single char
             if command.lower() == 'space' or command == ' ':
@@ -67,57 +106,160 @@ class ArduinoWASDController:
             else:
                 command = command[0]  # Take first character
         
-        # Send command - Arduino sketch expects single character
-        self.serial.write(command.encode())
-        time.sleep(0.05)  # Small delay for command processing
+        if debug:
+            print(f"[DEBUG] Sending command: '{command}' (original: '{original_command}')")
+            print(f"[DEBUG] Bytes waiting before send: {self.serial.in_waiting}")
         
-        # Read Arduino response if available
+        # Clear any pending input (but save for debug)
+        pending_data = None
         if self.serial.in_waiting > 0:
-            response = self.serial.readline().decode().strip()
+            pending_data = self.serial.read(self.serial.in_waiting)
+            if debug:
+                try:
+                    pending_str = pending_data.decode('utf-8', errors='ignore')
+                    print(f"[DEBUG] Cleared pending data: {repr(pending_str)}")
+                except:
+                    print(f"[DEBUG] Cleared pending data (raw): {pending_data}")
+        
+        # Send command - Arduino sketch expects single character
+        try:
+            bytes_written = self.serial.write(command.encode('utf-8'))
+            self.serial.flush()  # Ensure command is sent immediately
+            if debug:
+                print(f"[DEBUG] Wrote {bytes_written} byte(s): {repr(command.encode('utf-8'))}")
+        except Exception as e:
+            if debug:
+                print(f"[DEBUG] Error writing command: {e}")
+            raise RuntimeError(f"Failed to send command: {e}")
+        
+        # Wait for Arduino to process (Arduino has delays in some commands)
+        # Forward/Reverse have 100ms delay, steering has 200ms delay
+        time.sleep(0.2)  # Wait for processing
+        
+        # Read Arduino response with extended timeout
+        response = None
+        response_lines = []
+        max_wait_time = 1.0  # Wait up to 1 second for response
+        start_time = time.time()
+        bytes_read = 0
+        
+        if debug:
+            print(f"[DEBUG] Waiting for response (timeout: {max_wait_time}s)...")
+        
+        while time.time() - start_time < max_wait_time:
+            bytes_available = self.serial.in_waiting
+            if bytes_available > 0:
+                try:
+                    # Read available data
+                    raw_data = self.serial.read(bytes_available)
+                    bytes_read += len(raw_data)
+                    
+                    if debug:
+                        print(f"[DEBUG] Read {bytes_available} bytes: {repr(raw_data)}")
+                    
+                    # Decode and split by lines
+                    try:
+                        text = raw_data.decode('utf-8', errors='ignore')
+                        if debug:
+                            print(f"[DEBUG] Decoded text: {repr(text)}")
+                        
+                        # Split by newlines and process
+                        lines = text.split('\n')
+                        for line in lines:
+                            line = line.strip()
+                            if line and line not in ['', '\r']:
+                                response_lines.append(line)
+                                if debug:
+                                    print(f"[DEBUG] Added response line: {repr(line)}")
+                    except UnicodeDecodeError as e:
+                        if debug:
+                            print(f"[DEBUG] Unicode decode error: {e}, raw: {raw_data}")
+                    
+                    # If we got a complete response, break
+                    if response_lines:
+                        # Check if more data might be coming
+                        time.sleep(0.05)
+                        if self.serial.in_waiting == 0:
+                            break
+                except Exception as e:
+                    if debug:
+                        print(f"[DEBUG] Error reading response: {e}")
+                    break
+            else:
+                # No data yet, wait a bit
+                time.sleep(0.01)
+        
+        # Return the first meaningful response
+        for line in response_lines:
+            if line and line.strip():
+                response = line.strip()
+                break
+        
+        if debug:
             if response:
-                return response
-        return None
+                print(f"[DEBUG] Final response: {repr(response)}")
+            else:
+                print(f"[DEBUG] No response received (read {bytes_read} bytes total)")
+                if bytes_read > 0:
+                    print(f"[DEBUG] Response lines found: {response_lines}")
+        
+        return response
     
-    def forward(self):
+    def forward(self, debug: bool = None):
         """Move forward (W command)"""
-        return self._send_command('w')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('w', debug=debug)
     
-    def backward(self):
+    def backward(self, debug: bool = None):
         """Move backward (S command)"""
-        return self._send_command('s')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('s', debug=debug)
     
-    def left(self):
+    def left(self, debug: bool = None):
         """Steer left tap (A command)"""
-        return self._send_command('a')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('a', debug=debug)
     
-    def right(self):
+    def right(self, debug: bool = None):
         """Steer right tap (D command)"""
-        # Send 'd' or 'D' command - Arduino accepts both (case-insensitive)
-        # Using lowercase to match other commands
-        return self._send_command('d')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('d', debug=debug)
     
-    def stop(self):
+    def stop(self, debug: bool = None):
         """Stop drive (space command)"""
-        return self._send_command(' ')
+        if debug is None:
+            debug = self.debug
+        return self._send_command(' ', debug=debug)
     
-    def center(self):
+    def center(self, debug: bool = None):
         """Center steering (C command)"""
-        return self._send_command('c')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('c', debug=debug)
     
-    def all_off(self):
+    def all_off(self, debug: bool = None):
         """Turn everything off (X command)"""
-        return self._send_command('x')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('x', debug=debug)
     
-    def test_mode(self):
+    def test_mode(self, debug: bool = None):
         """Enter test mode (T command)"""
-        return self._send_command('t')
+        if debug is None:
+            debug = self.debug
+        return self._send_command('t', debug=debug)
     
-    def execute_command(self, cmd: str) -> Optional[str]:
+    def execute_command(self, cmd: str, debug: bool = False) -> Optional[str]:
         """
         Execute a command string
         
         Args:
             cmd: Command string (w, s, a, d, space, c, x, etc.)
+            debug: Enable debug output
         
         Returns:
             Arduino response or None
@@ -141,9 +283,13 @@ class ArduinoWASDController:
         }
         
         if cmd in command_map:
-            return command_map[cmd]()
+            return command_map[cmd](debug=debug)
         else:
             return f"Unknown command: {cmd}"
+    
+    def set_debug(self, debug: bool):
+        """Enable/disable debug mode"""
+        self.debug = debug
     
     def __enter__(self):
         """Context manager entry"""
@@ -168,6 +314,8 @@ def main():
                        help='Run in interactive mode')
     parser.add_argument('--list-ports', action='store_true',
                        help='List available serial ports')
+    parser.add_argument('--debug', '-d', action='store_true',
+                       help='Enable debug output')
     
     args = parser.parse_args()
     
@@ -181,10 +329,10 @@ def main():
         return
     
     # Create controller
-    controller = ArduinoWASDController(port=args.port, baudrate=args.baudrate)
+    controller = ArduinoWASDController(port=args.port, baudrate=args.baudrate, debug=args.debug)
     
     try:
-        if not controller.connect():
+        if not controller.connect(debug=args.debug):
             sys.exit(1)
         
         # Interactive mode
@@ -208,19 +356,27 @@ def main():
                         print("  q/quit - Exit")
                         continue
                     
-                    response = controller.execute_command(cmd)
+                    response = controller.execute_command(cmd, debug=args.debug)
                     if response:
                         print(f"Arduino: {response}")
+                    else:
+                        print("Command sent (no response)")
                 except KeyboardInterrupt:
                     break
                 except Exception as e:
                     print(f"Error: {e}")
+                    if args.debug:
+                        import traceback
+                        traceback.print_exc()
         
         # Single command mode
         elif args.command:
-            response = controller.execute_command(args.command)
+            response = controller.execute_command(args.command, debug=args.debug)
             if response:
                 print(response)
+            else:
+                # Exit with success even if no response (command may have executed)
+                sys.exit(0)
         else:
             parser.print_help()
     

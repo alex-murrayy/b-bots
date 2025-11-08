@@ -92,13 +92,15 @@ class InteractiveRCCarControl:
         # If running locally and controller available, use direct connection
         if self.is_local and HAS_CONTROLLER and not use_service:
             try:
-                self.local_controller = ArduinoWASDController(port=arduino_port)
-                if self.local_controller.connect():
+                self.local_controller = ArduinoWASDController(port=arduino_port, debug=False)
+                if self.local_controller.connect(debug=False):
                     print(f"Connected directly to Arduino on {arduino_port}")
                 else:
+                    print("WARNING: Could not connect to Arduino, commands may not work")
                     self.local_controller = None
             except Exception as e:
-                print(f"Could not connect directly: {e}")
+                print(f"WARNING: Could not connect directly: {e}")
+                print("Commands will be sent but may not execute")
                 self.local_controller = None
     
     def _detect_local_mode(self) -> bool:
@@ -120,18 +122,30 @@ class InteractiveRCCarControl:
         """Send command via direct Arduino connection"""
         if self.local_controller:
             try:
-                self.local_controller.execute_command(command)
+                response = self.local_controller.execute_command(command, debug=False)
+                # Response is optional - command may execute even if no response
+                return response
             except Exception as e:
-                pass
+                # Don't print errors for every command (too noisy)
+                # But log them if monitor is enabled
+                if self.monitor:
+                    import traceback
+                    traceback.print_exc()
+                return None
         else:
             script_path = os.path.expanduser(self.script_path)
             if os.path.exists(script_path):
-                subprocess.run(
-                    ['python3', script_path, command],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    timeout=2
-                )
+                try:
+                    result = subprocess.run(
+                        ['python3', script_path, command],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        timeout=2
+                    )
+                    return result.stdout.decode('utf-8', errors='ignore').strip()
+                except Exception:
+                    return None
+        return None
     
     def _send_command_service_file(self, command: str):
         """Send command via service file (local)"""

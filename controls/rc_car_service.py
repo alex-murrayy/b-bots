@@ -77,12 +77,12 @@ class RCCarService:
         arduino_cmd = cmd_map.get(cmd_lower, cmd_lower[0] if cmd_lower else ' ')
         
         try:
-            self.serial.write(arduino_cmd.encode())
-            time.sleep(0.05)
-            
-            if self.serial.in_waiting > 0:
-                return self.serial.readline().decode().strip()
-            return "OK"
+        self.serial.write(arduino_cmd.encode())
+        time.sleep(0.05)
+        
+        if self.serial.in_waiting > 0:
+            return self.serial.readline().decode().strip()
+        return "OK"
         except Exception as e:
             return f"Error: {e}"
     

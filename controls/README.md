@@ -4,6 +4,17 @@ Complete control system for RC car with Arduino-based motor control using WASD p
 
 ## Quick Start
 
+### 1. Setup Arduino
+- Upload `arduinoControls.ino` to your Arduino
+- Connect Arduino to Raspberry Pi via USB
+- Find port: `python3 controls/arduino_wasd_controller.py --list-ports`
+
+### 2. Test Connection
+```bash
+python3 controls/test_arduino.py
+```
+
+### 3. Run Interactive Control
 ```bash
 # Interactive control (recommended)
 python3 controls/interactive_control.py
@@ -14,6 +25,18 @@ python3 controls/simple_interactive.py
 # With monitoring/benchmarking
 python3 controls/interactive_control.py --monitor
 ```
+
+**Controls:**
+- `W` / `↑` - Forward
+- `S` / `↓` - Backward
+- `A` / `←` - Steer Left
+- `D` / `→` - Steer Right
+- `Space` - Stop Drive
+- `C` - Center Steering
+- `X` - All Off
+- `Q` - Quit
+
+See `QUICK_START.md` for detailed setup instructions.
 
 ## System Overview
 
