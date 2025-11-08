@@ -234,7 +234,7 @@ ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py a"
 # Right
 ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py d"
 
-# Stop
+        # Stop
 ssh pi@raspberrypi.local "python3 ~/rc_car_control/arduino_wasd_controller.py space"
 ```
 

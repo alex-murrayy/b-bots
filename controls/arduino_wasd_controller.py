@@ -14,13 +14,13 @@ from typing import Optional
 class ArduinoWASDController:
     """Controller for Arduino using WASD command protocol"""
     
-    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 115200, debug: bool = False):
+    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = 9600, debug: bool = False):
         """
         Initialize Arduino Controller
         
         Args:
             port: Serial port (typically /dev/ttyACM0 or /dev/ttyUSB0 on Raspberry Pi)
-            baudrate: Serial baud rate (default: 115200 to match Arduino sketch)
+            baudrate: Serial baud rate (default: 9600 to match Arduino sketch)
             debug: Enable debug output
         """
         self.port = port
@@ -140,13 +140,26 @@ class ArduinoWASDController:
             raise RuntimeError("Not connected to Arduino. Call connect() first.")
         
         # Ensure command is a single character (Arduino expects single char)
+        # Strip whitespace and newlines that might have been added
         original_command = command
+        command = command.strip()
+        
+        # Handle multi-character command names
         if len(command) > 1:
             # For multi-char commands like 'space', convert to single char
-            if command.lower() == 'space' or command == ' ':
+            if command.lower() == 'space' or command.lower() == 'stop':
                 command = ' '
             else:
-                command = command[0]  # Take first character
+                # Take first character only
+                command = command[0]
+        
+        # Validate it's a single character
+        if len(command) != 1:
+            raise ValueError(f"Command must be a single character, got: {repr(original_command)} -> {repr(command)}")
+        
+        # Ensure it's a printable ASCII character (for commands we use)
+        if ord(command) < 32 and command != ' ':  # Allow space (0x20)
+            raise ValueError(f"Invalid command character: {repr(command)} (0x{ord(command):02x})")
         
         if debug:
             print(f"[DEBUG] Sending command: '{command}' (original: '{original_command}')")
@@ -164,14 +177,37 @@ class ArduinoWASDController:
                     print(f"[DEBUG] Cleared pending data (raw): {pending_data}")
         
         # Send command - Arduino sketch expects single character
+        # Convert to bytes explicitly to ensure correct encoding
+        # CRITICAL: Send ONLY the single byte, no newlines, no carriage returns
         try:
-            bytes_written = self.serial.write(command.encode('utf-8'))
-            self.serial.flush()  # Ensure command is sent immediately
+            # Get the ASCII byte value directly
+            command_byte = ord(command)
+            command_bytes = bytes([command_byte])  # Create single-byte bytes object
+            
             if debug:
-                print(f"[DEBUG] Wrote {bytes_written} byte(s): {repr(command.encode('utf-8'))}")
+                print(f"[DEBUG] Command character: '{command}'")
+                print(f"[DEBUG] Command byte value: {command_byte} (0x{command_byte:02x})")
+                print(f"[DEBUG] Command bytes object: {repr(command_bytes)}")
+            
+            # Write the single byte
+            bytes_written = self.serial.write(command_bytes)
+            
+            # CRITICAL: Flush immediately to send the byte
+            self.serial.flush()
+            
+            if debug:
+                print(f"[DEBUG] Wrote {bytes_written} byte(s) to serial port")
+                if bytes_written != 1:
+                    print(f"[DEBUG] WARNING: Expected 1 byte, wrote {bytes_written} bytes!")
+                
+            # Small delay to ensure byte is sent before proceeding
+            time.sleep(0.01)
+            
         except Exception as e:
             if debug:
                 print(f"[DEBUG] Error writing command: {e}")
+                import traceback
+                traceback.print_exc()
             raise RuntimeError(f"Failed to send command: {e}")
         
         # Wait for Arduino to process
@@ -262,24 +298,32 @@ class ArduinoWASDController:
         """Move forward (W command)"""
         if debug is None:
             debug = self.debug
+        if debug:
+            print(f"[DEBUG] forward() called - sending 'w' command")
         return self._send_command('w', debug=debug)
     
     def backward(self, debug: bool = None):
         """Move backward (S command)"""
         if debug is None:
             debug = self.debug
+        if debug:
+            print(f"[DEBUG] backward() called - sending 's' command")
         return self._send_command('s', debug=debug)
     
     def left(self, debug: bool = None):
         """Steer left tap (A command)"""
         if debug is None:
             debug = self.debug
+        if debug:
+            print(f"[DEBUG] left() called - sending 'a' command")
         return self._send_command('a', debug=debug)
     
     def right(self, debug: bool = None):
         """Steer right tap (D command)"""
         if debug is None:
             debug = self.debug
+        if debug:
+            print(f"[DEBUG] right() called - sending 'd' command")
         return self._send_command('d', debug=debug)
     
     def stop(self, debug: bool = None):
@@ -317,7 +361,11 @@ class ArduinoWASDController:
         Returns:
             Arduino response or None
         """
+        original_cmd = cmd
         cmd = cmd.lower().strip()
+        
+        if debug:
+            print(f"[DEBUG] execute_command() called with: '{original_cmd}' -> '{cmd}'")
         
         command_map = {
             'w': self.forward,
@@ -336,6 +384,8 @@ class ArduinoWASDController:
         }
         
         if cmd in command_map:
+            if debug:
+                print(f"[DEBUG] Mapping '{cmd}' to function: {command_map[cmd].__name__}")
             return command_map[cmd](debug=debug)
         else:
             return f"Unknown command: {cmd}"
@@ -359,8 +409,8 @@ def main():
     parser = argparse.ArgumentParser(description='Arduino WASD Controller for RC Car')
     parser.add_argument('--port', '-p', default='/dev/ttyACM0', 
                        help='Serial port (default: /dev/ttyACM0)')
-    parser.add_argument('--baudrate', '-b', type=int, default=115200,
-                       help='Serial baud rate (default: 115200)')
+    parser.add_argument('--baudrate', '-b', type=int, default=9600,
+                       help='Serial baud rate (default: 9600)')
     parser.add_argument('command', nargs='?', 
                        help='Command to execute: w(forward), s(backward), a(left), d(right), space(stop), c(center), x(off)')
     parser.add_argument('--interactive', '-i', action='store_true',

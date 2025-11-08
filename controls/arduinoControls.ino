@@ -1,14 +1,9 @@
 // ===== YOUR PIN MAP =====
-// Based on actual behavior:
-// - 'w' (forward) turns left -> pin 5 is LEFT motor
-// - 'a' (left) goes forward -> pin 8 is FORWARD motor
-// - 'd' (right) reverses -> pin 6 is REVERSE motor
-// - Right not working -> pin 7 should be RIGHT motor
 
-const int PIN_FWD   = 8;  // Forward motor (pin 8 actually controls forward)
-const int PIN_REV   = 6;  // Reverse motor (pin 6 actually controls reverse)
-const int PIN_LEFT  = 5;  // Left steering (pin 5 actually controls left)
-const int PIN_RIGHT = 7;  // Right steering (pin 7 should control right)
+const int PIN_FWD   = 5;  // Orange (Fwd)
+const int PIN_REV   = 7;  // Grey BM (Rev)
+const int PIN_LEFT  = 8;  // Purple FM (Left)
+const int PIN_RIGHT = 6;  // Grey FM (Right)
 
 // ===== BEHAVIOR SWITCHES =====
 
